@@ -151,3 +151,62 @@
 .th-songbook-song-list__item.ui-sortable-helper .th-songbook-song-list__handle {
     cursor: grabbing;
 }
+
+.th-songbook-setlists {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.th-songbook-setlist {
+    flex: 1 1 260px;
+    min-width: 260px;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 1rem;
+    background-color: #fefefe;
+}
+
+.th-songbook-setlist__title {
+    margin: 0 0 0.75rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.th-songbook-song-manager {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: none;
+    width: 100%;
+}
+
+.th-songbook-song-list__item {
+    justify-content: flex-start;
+    gap: 0.5rem;
+}
+
+.th-songbook-song-list__duration {
+    margin-left: auto;
+    margin-right: 0.5rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.th-songbook-set-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0.75rem 0 0;
+    font-weight: 600;
+}
+
+.th-songbook-set-total__value {
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 782px) {
+    .th-songbook-setlists {
+        flex-direction: column;
+    }
+}
