@@ -370,6 +370,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                         <ul class="th-songbook-song-list">
                             <?php foreach ( $selected_songs as $song ) : ?>
                                 <li class="th-songbook-song-list__item<?php echo ! empty( $song['missing'] ) ? ' is-missing' : ''; ?>" data-song-id="<?php echo esc_attr( $song['id'] ); ?>">
+                                    <span class="th-songbook-song-list__handle dashicons dashicons-move" aria-hidden="true" title="<?php echo esc_attr__( 'Drag to reorder', 'th-songbook' ); ?>"></span>
                                     <span class="th-songbook-song-list__title"><?php echo esc_html( $song['title'] ); ?></span>
                                     <button type="button" class="button-link th-songbook-remove-song"><?php esc_html_e( 'Remove', 'th-songbook' ); ?></button>
                                     <input type="hidden" name="th_gig_songs[]" value="<?php echo esc_attr( $song['id'] ); ?>" />
@@ -466,10 +467,12 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             }
 
             if ( 'th_gig' === $screen->post_type ) {
+                wp_enqueue_style( 'dashicons' );
+
                 wp_enqueue_script(
                     'th-songbook-admin-gigs',
                     TH_SONGBOOK_PLUGIN_URL . 'assets/js/th-songbook-admin-gigs.js',
-                    array( 'jquery' ),
+                    array( 'jquery', 'jquery-ui-sortable' ),
                     TH_SONGBOOK_VERSION,
                     true
                 );
@@ -484,7 +487,8 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                             'searchPlaceholder' => __( 'Search songs...', 'th-songbook' ),
                             'noMatches'         => __( 'No matching songs found.', 'th-songbook' ),
                             'removeSong'        => __( 'Remove', 'th-songbook' ),
-                            'noSongsAssigned'  => __( 'No songs assigned yet.', 'th-songbook' ),
+                            'dragHandle'        => __( 'Drag to reorder', 'th-songbook' ),
+                            'noSongsAssigned'   => __( 'No songs assigned yet.', 'th-songbook' ),
                         ),
                     )
                 );
@@ -526,7 +530,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
          *
          * @param int    $post_id  Post ID.
          * @param string $meta_key Meta key to update.
-         * @param string $value    Sanitized value.
+         * @param mixed  $value    Sanitized value.
          */
         private function update_meta_value( $post_id, $meta_key, $value ) {
             if ( '' === $value || ( is_array( $value ) && empty( $value ) ) ) {
@@ -596,6 +600,3 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
     // Ensure the plugin is loaded.
     th_songbook();
 }
-
-
-

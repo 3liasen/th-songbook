@@ -120,3 +120,34 @@
 .th-songbook-song-manager .th-songbook-remove-song {
     white-space: nowrap;
 }
+.th-songbook-song-list__handle {
+    cursor: grab;
+    margin-right: 12px;
+    font-size: 18px;
+    line-height: 1;
+    color: #757575;
+    user-select: none;
+}
+
+.th-songbook-song-list__item.is-missing .th-songbook-song-list__handle {
+    color: #a00;
+}
+
+.th-songbook-song-list__item--placeholder {
+    border: 2px dashed #2271b1;
+    background-color: #f0f6fc;
+    min-height: 44px;
+}
+.th-songbook-song-list__handle.dashicons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.th-songbook-song-list__item.ui-sortable-helper .th-songbook-song-list__handle {
+    cursor: grabbing;
+}

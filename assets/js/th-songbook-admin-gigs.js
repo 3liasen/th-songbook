@@ -29,6 +29,7 @@
         var $list = $manager.find( '.th-songbook-song-list' );
         var $emptyState = $manager.find( '.th-songbook-song-list__empty' );
         var searchEnabled = $searchInput.length && songs.length;
+        var sortableEnabled = false;
 
         if ( $searchInput.length ) {
             $searchInput.attr( 'placeholder', i18n.searchPlaceholder || $searchInput.attr( 'placeholder' ) || '' );
@@ -59,6 +60,28 @@
                 $emptyState.remove();
                 $emptyState = $( [] );
             }
+        }
+
+        function setupSortable() {
+            if ( sortableEnabled || ! $.fn.sortable ) {
+                return;
+            }
+
+            $list.sortable( {
+                axis: 'y',
+                handle: '.th-songbook-song-list__handle',
+                placeholder: 'th-songbook-song-list__item th-songbook-song-list__item--placeholder',
+                forcePlaceholderSize: true,
+                tolerance: 'pointer',
+                start: function() {
+                    clearResults();
+                },
+                update: function() {
+                    ensureEmptyState();
+                }
+            } );
+
+            sortableEnabled = true;
         }
 
         function buildMatches( query ) {
@@ -124,6 +147,14 @@
                 .attr( 'data-song-id', id );
 
             $( '<span/>' )
+                .addClass( 'th-songbook-song-list__handle dashicons dashicons-move' )
+                .attr( {
+                    'aria-hidden': 'true',
+                    title: i18n.dragHandle || ''
+                } )
+                .appendTo( $item );
+
+            $( '<span/>' )
                 .addClass( 'th-songbook-song-list__title' )
                 .text( title )
                 .appendTo( $item );
@@ -143,6 +174,12 @@
                 .appendTo( $item );
 
             $list.append( $item );
+            setupSortable();
+
+            if ( sortableEnabled ) {
+                $list.sortable( 'refresh' );
+            }
+
             ensureEmptyState();
         }
 
@@ -248,9 +285,14 @@
             event.preventDefault();
             $( this ).closest( '.th-songbook-song-list__item' ).remove();
             ensureEmptyState();
+
+            if ( sortableEnabled ) {
+                $list.sortable( 'refresh' );
+            }
         } );
 
         ensureEmptyState();
+        setupSortable();
     }
 
     var config = window.thSongbookGig || {};
@@ -260,7 +302,8 @@
         noMatches: 'No matching songs found.',
         removeSong: 'Remove',
         invalidTime: 'Please enter a valid time in 24-hour format (hh:mm).',
-        noSongsAssigned: 'No songs assigned yet.'
+        noSongsAssigned: 'No songs assigned yet.',
+        dragHandle: 'Drag to reorder'
     }, config.i18n || {} );
 
     var invalidTimeMessage = i18n.invalidTime || '';
@@ -300,3 +343,4 @@
         } );
     } );
 })( jQuery );
+
