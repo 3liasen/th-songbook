@@ -210,7 +210,6 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             $composer = get_post_meta( $post->ID, 'th_song_composer', true );
             $lyrics   = get_post_meta( $post->ID, 'th_song_lyrics', true );
             $key      = get_post_meta( $post->ID, 'th_song_key', true );
-            $text     = get_post_meta( $post->ID, 'th_song_text', true );
             $keys     = $this->get_song_keys();
 
             wp_nonce_field( 'th_songbook_save_song', 'th_songbook_song_meta_nonce' );
@@ -222,6 +221,11 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                 </div>
 
                 <div class="th-songbook-field">
+                    <label for="th_song_lyrics"><?php esc_html_e( 'Lyrics', 'th-songbook' ); ?></label>
+                    <input type="text" class="regular-text" id="th_song_lyrics" name="th_song_lyrics" value="<?php echo esc_attr( $lyrics ); ?>" />
+                </div>
+
+                <div class="th-songbook-field">
                     <label for="th_song_key"><?php esc_html_e( 'Key', 'th-songbook' ); ?></label>
                     <select id="th_song_key" name="th_song_key" class="th-songbook-select">
                         <option value=""><?php esc_html_e( 'Select a key', 'th-songbook' ); ?></option>
@@ -229,16 +233,6 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                             <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $key, $value ); ?>><?php echo esc_html( $label ); ?></option>
                         <?php endforeach; ?>
                     </select>
-                </div>
-
-                <div class="th-songbook-field">
-                    <label for="th_song_lyrics"><?php esc_html_e( 'Lyrics', 'th-songbook' ); ?></label>
-                    <textarea class="large-text" id="th_song_lyrics" name="th_song_lyrics" rows="6"><?php echo esc_textarea( $lyrics ); ?></textarea>
-                </div>
-
-                <div class="th-songbook-field">
-                    <label for="th_song_text"><?php esc_html_e( 'Text', 'th-songbook' ); ?></label>
-                    <textarea class="large-text" id="th_song_text" name="th_song_text" rows="6"><?php echo esc_textarea( $text ); ?></textarea>
                 </div>
             </div>
             <?php
@@ -268,14 +262,12 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             }
 
             $composer = isset( $_POST['th_song_composer'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_composer'] ) ) : '';
-            $lyrics   = isset( $_POST['th_song_lyrics'] ) ? sanitize_textarea_field( wp_unslash( $_POST['th_song_lyrics'] ) ) : '';
+            $lyrics   = isset( $_POST['th_song_lyrics'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_lyrics'] ) ) : '';
             $key      = isset( $_POST['th_song_key'] ) ? $this->sanitize_song_key( wp_unslash( $_POST['th_song_key'] ) ) : '';
-            $text     = isset( $_POST['th_song_text'] ) ? sanitize_textarea_field( wp_unslash( $_POST['th_song_text'] ) ) : '';
 
             $this->update_meta_value( $post_id, 'th_song_composer', $composer );
             $this->update_meta_value( $post_id, 'th_song_lyrics', $lyrics );
             $this->update_meta_value( $post_id, 'th_song_key', $key );
-            $this->update_meta_value( $post_id, 'th_song_text', $text );
         }
 
         /**
