@@ -302,16 +302,25 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
 
             $selected_song_ids = array_values( array_unique( array_filter( $selected_song_ids ) ) );
 
-            $available_songs = get_posts(
-                array(
-                    'post_type'      => 'th_song',
-                    'post_status'    => 'publish',
-                    'posts_per_page' => -1,
-                    'orderby'        => 'title',
-                    'order'          => 'ASC',
-                    'no_found_rows'  => true,
-                )
-            );
+            $available_song_choices = $this->get_available_song_choices();
+            $available_song_map     = wp_list_pluck( $available_song_choices, 'title', 'id' );
+
+            $selected_songs = array();
+            foreach ( $selected_song_ids as $song_id ) {
+                if ( isset( $available_song_map[ $song_id ] ) ) {
+                    $selected_songs[] = array(
+                        'id'      => $song_id,
+                        'title'   => $available_song_map[ $song_id ],
+                        'missing' => false,
+                    );
+                } else {
+                    $selected_songs[] = array(
+                        'id'      => $song_id,
+                        'title'   => sprintf( __( 'Song #%d (unavailable)', 'th-songbook' ), $song_id ),
+                        'missing' => true,
+                    );
+                }
+            }
 
             wp_nonce_field( 'th_songbook_save_gig', 'th_songbook_gig_meta_nonce' );
             ?>
@@ -349,16 +358,32 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                 </div>
 
                 <div class="th-songbook-field th-songbook-field--songs">
-                    <label for="th_gig_songs"><?php esc_html_e( 'Songs', 'th-songbook' ); ?></label>
-                    <?php if ( ! empty( $available_songs ) ) : ?>
-                        <select id="th_gig_songs" name="th_gig_songs[]" class="th-songbook-song-select" multiple="multiple" size="10">
-                            <?php foreach ( $available_songs as $song_post ) : ?>
-                                <option value="<?php echo esc_attr( $song_post->ID ); ?>" <?php selected( in_array( $song_post->ID, $selected_song_ids, true ) ); ?>><?php echo esc_html( get_the_title( $song_post ) ); ?></option>
+                    <label for="th-songbook-song-search-<?php echo esc_attr( $post->ID ); ?>"><?php esc_html_e( 'Songs', 'th-songbook' ); ?></label>
+                    <div class="th-songbook-song-manager" data-song-search="<?php echo esc_attr( $post->ID ); ?>">
+                        <?php if ( ! empty( $available_song_choices ) ) : ?>
+                            <div class="th-songbook-song-search">
+                                <label class="screen-reader-text" for="th-songbook-song-search-<?php echo esc_attr( $post->ID ); ?>"><?php esc_html_e( 'Search songs', 'th-songbook' ); ?></label>
+                                <input type="search" id="th-songbook-song-search-<?php echo esc_attr( $post->ID ); ?>" class="th-songbook-song-search__input" placeholder="<?php echo esc_attr__( 'Search songs...', 'th-songbook' ); ?>" autocomplete="off" />
+                                <ul class="th-songbook-song-search__results" role="listbox"></ul>
+                            </div>
+                        <?php endif; ?>
+                        <ul class="th-songbook-song-list">
+                            <?php foreach ( $selected_songs as $song ) : ?>
+                                <li class="th-songbook-song-list__item<?php echo ! empty( $song['missing'] ) ? ' is-missing' : ''; ?>" data-song-id="<?php echo esc_attr( $song['id'] ); ?>">
+                                    <span class="th-songbook-song-list__title"><?php echo esc_html( $song['title'] ); ?></span>
+                                    <button type="button" class="button-link th-songbook-remove-song"><?php esc_html_e( 'Remove', 'th-songbook' ); ?></button>
+                                    <input type="hidden" name="th_gig_songs[]" value="<?php echo esc_attr( $song['id'] ); ?>" />
+                                </li>
                             <?php endforeach; ?>
-                        </select>
-                        <p class="description"><?php esc_html_e( 'Hold CTRL (Windows) or CMD (Mac) to select multiple songs. The order saved here will match the order in this list.', 'th-songbook' ); ?></p>
-                    <?php else : ?>
+                        </ul>
+                        <?php if ( empty( $selected_songs ) ) : ?>
+                            <p class="description th-songbook-song-list__empty"><?php esc_html_e( 'No songs assigned yet.', 'th-songbook' ); ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ( empty( $available_song_choices ) ) : ?>
                         <p class="description"><?php esc_html_e( 'No songs available yet. Add songs first, then return to this gig.', 'th-songbook' ); ?></p>
+                    <?php else : ?>
+                        <p class="description"><?php esc_html_e( 'Search for a song to add it to this gig. Click a song in the list to remove it.', 'th-songbook' ); ?></p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -453,12 +478,47 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                     'th-songbook-admin-gigs',
                     'thSongbookGig',
                     array(
-                        'i18n' => array(
-                            'invalidTime' => __( 'Please enter a valid time in 24-hour format (hh:mm).', 'th-songbook' ),
+                        'songs' => $this->get_available_song_choices(),
+                        'i18n'  => array(
+                            'invalidTime'       => __( 'Please enter a valid time in 24-hour format (hh:mm).', 'th-songbook' ),
+                            'searchPlaceholder' => __( 'Search songs...', 'th-songbook' ),
+                            'noMatches'         => __( 'No matching songs found.', 'th-songbook' ),
+                            'removeSong'        => __( 'Remove', 'th-songbook' ),
+                            'noSongsAssigned'  => __( 'No songs assigned yet.', 'th-songbook' ),
                         ),
                     )
                 );
             }
+        }
+
+        /**
+         * Retrieve all songs that can be attached to a gig.
+         *
+         * @return array<int, array{id:int,title:string}> Songs formatted for UI use.
+         */
+        private function get_available_song_choices() {
+            $song_ids = get_posts(
+                array(
+                    'post_type'      => 'th_song',
+                    'post_status'    => array( 'publish', 'draft', 'pending', 'future' ),
+                    'posts_per_page' => -1,
+                    'orderby'        => 'title',
+                    'order'          => 'ASC',
+                    'no_found_rows'  => true,
+                    'fields'         => 'ids',
+                )
+            );
+
+            $choices = array();
+
+            foreach ( $song_ids as $song_id ) {
+                $choices[] = array(
+                    'id'    => (int) $song_id,
+                    'title' => get_the_title( $song_id ),
+                );
+            }
+
+            return $choices;
         }
 
         /**
@@ -536,3 +596,6 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
     // Ensure the plugin is loaded.
     th_songbook();
 }
+
+
+
