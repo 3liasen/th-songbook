@@ -49,7 +49,9 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             add_action( 'init', array( $this, 'register_song_post_type' ) );
             add_action( 'init', array( $this, 'register_gig_post_type' ) );
             add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
+            add_action( 'add_meta_boxes', array( $this, 'register_song_meta_boxes' ) );
             add_action( 'add_meta_boxes', array( $this, 'register_gig_meta_boxes' ) );
+            add_action( 'save_post_th_song', array( $this, 'save_song_meta' ), 10, 2 );
             add_action( 'save_post_th_gig', array( $this, 'save_gig_meta' ), 10, 2 );
             add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         }
@@ -186,6 +188,97 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
         }
 
         /**
+         * Register song meta boxes.
+         */
+        public function register_song_meta_boxes() {
+            add_meta_box(
+                'th-songbook-song-details',
+                __( 'Song Details', 'th-songbook' ),
+                array( $this, 'render_song_details_metabox' ),
+                'th_song',
+                'normal',
+                'high'
+            );
+        }
+
+        /**
+         * Render the song details meta box.
+         *
+         * @param WP_Post $post Current song post.
+         */
+        public function render_song_details_metabox( $post ) {
+            $composer = get_post_meta( $post->ID, 'th_song_composer', true );
+            $lyrics   = get_post_meta( $post->ID, 'th_song_lyrics', true );
+            $key      = get_post_meta( $post->ID, 'th_song_key', true );
+            $text     = get_post_meta( $post->ID, 'th_song_text', true );
+            $keys     = $this->get_song_keys();
+
+            wp_nonce_field( 'th_songbook_save_song', 'th_songbook_song_meta_nonce' );
+            ?>
+            <div class="th-songbook-meta">
+                <div class="th-songbook-field">
+                    <label for="th_song_composer"><?php esc_html_e( 'Composer', 'th-songbook' ); ?></label>
+                    <input type="text" class="regular-text" id="th_song_composer" name="th_song_composer" value="<?php echo esc_attr( $composer ); ?>" />
+                </div>
+
+                <div class="th-songbook-field">
+                    <label for="th_song_key"><?php esc_html_e( 'Key', 'th-songbook' ); ?></label>
+                    <select id="th_song_key" name="th_song_key" class="th-songbook-select">
+                        <option value=""><?php esc_html_e( 'Select a key', 'th-songbook' ); ?></option>
+                        <?php foreach ( $keys as $value => $label ) : ?>
+                            <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $key, $value ); ?>><?php echo esc_html( $label ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="th-songbook-field">
+                    <label for="th_song_lyrics"><?php esc_html_e( 'Lyrics', 'th-songbook' ); ?></label>
+                    <textarea class="large-text" id="th_song_lyrics" name="th_song_lyrics" rows="6"><?php echo esc_textarea( $lyrics ); ?></textarea>
+                </div>
+
+                <div class="th-songbook-field">
+                    <label for="th_song_text"><?php esc_html_e( 'Text', 'th-songbook' ); ?></label>
+                    <textarea class="large-text" id="th_song_text" name="th_song_text" rows="6"><?php echo esc_textarea( $text ); ?></textarea>
+                </div>
+            </div>
+            <?php
+        }
+
+        /**
+         * Persist song metadata when a song is saved.
+         *
+         * @param int     $post_id The post ID.
+         * @param WP_Post $post    The post object.
+         */
+        public function save_song_meta( $post_id, $post ) {
+            if ( ! isset( $_POST['th_songbook_song_meta_nonce'] ) || ! wp_verify_nonce( $_POST['th_songbook_song_meta_nonce'], 'th_songbook_save_song' ) ) {
+                return;
+            }
+
+            if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+                return;
+            }
+
+            if ( 'th_song' !== $post->post_type ) {
+                return;
+            }
+
+            if ( ! current_user_can( 'edit_post', $post_id ) ) {
+                return;
+            }
+
+            $composer = isset( $_POST['th_song_composer'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_composer'] ) ) : '';
+            $lyrics   = isset( $_POST['th_song_lyrics'] ) ? sanitize_textarea_field( wp_unslash( $_POST['th_song_lyrics'] ) ) : '';
+            $key      = isset( $_POST['th_song_key'] ) ? $this->sanitize_song_key( wp_unslash( $_POST['th_song_key'] ) ) : '';
+            $text     = isset( $_POST['th_song_text'] ) ? sanitize_textarea_field( wp_unslash( $_POST['th_song_text'] ) ) : '';
+
+            $this->update_meta_value( $post_id, 'th_song_composer', $composer );
+            $this->update_meta_value( $post_id, 'th_song_lyrics', $lyrics );
+            $this->update_meta_value( $post_id, 'th_song_key', $key );
+            $this->update_meta_value( $post_id, 'th_song_text', $text );
+        }
+
+        /**
          * Register gig meta boxes.
          */
         public function register_gig_meta_boxes() {
@@ -289,7 +382,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
         }
 
         /**
-         * Enqueue admin assets for gig management screens.
+         * Enqueue admin assets for gig and song management screens.
          *
          * @param string $hook Current admin page hook suffix.
          */
@@ -299,34 +392,84 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             }
 
             $screen = get_current_screen();
-            if ( empty( $screen ) || 'th_gig' !== $screen->post_type ) {
+            if ( empty( $screen ) ) {
                 return;
             }
 
-            wp_enqueue_style(
-                'th-songbook-admin-gigs',
-                TH_SONGBOOK_PLUGIN_URL . 'assets/css/th-songbook-admin-gigs.css',
-                array(),
-                TH_SONGBOOK_VERSION
-            );
+            if ( in_array( $screen->post_type, array( 'th_song', 'th_gig' ), true ) ) {
+                wp_enqueue_style(
+                    'th-songbook-admin',
+                    TH_SONGBOOK_PLUGIN_URL . 'assets/css/th-songbook-admin.css',
+                    array(),
+                    TH_SONGBOOK_VERSION
+                );
+            }
 
-            wp_enqueue_script(
-                'th-songbook-admin-gigs',
-                TH_SONGBOOK_PLUGIN_URL . 'assets/js/th-songbook-admin-gigs.js',
-                array( 'jquery' ),
-                TH_SONGBOOK_VERSION,
-                true
-            );
+            if ( 'th_gig' === $screen->post_type ) {
+                wp_enqueue_script(
+                    'th-songbook-admin-gigs',
+                    TH_SONGBOOK_PLUGIN_URL . 'assets/js/th-songbook-admin-gigs.js',
+                    array( 'jquery' ),
+                    TH_SONGBOOK_VERSION,
+                    true
+                );
 
-            wp_localize_script(
-                'th-songbook-admin-gigs',
-                'thSongbookGig',
-                array(
-                    'i18n' => array(
-                        'invalidTime' => __( 'Please enter a valid time in 24-hour format (hh:mm).', 'th-songbook' ),
-                    ),
-                )
+                wp_localize_script(
+                    'th-songbook-admin-gigs',
+                    'thSongbookGig',
+                    array(
+                        'i18n' => array(
+                            'invalidTime' => __( 'Please enter a valid time in 24-hour format (hh:mm).', 'th-songbook' ),
+                        ),
+                    )
+                );
+            }
+        }
+
+        /**
+         * Provide the list of selectable song keys.
+         *
+         * @return array<string, string> Keys mapped to their labels.
+         */
+        private function get_song_keys() {
+            return array(
+                'C'  => 'C',
+                'C#' => 'C# / Db',
+                'D'  => 'D',
+                'D#' => 'D# / Eb',
+                'E'  => 'E',
+                'F'  => 'F',
+                'F#' => 'F# / Gb',
+                'G'  => 'G',
+                'G#' => 'G# / Ab',
+                'A'  => 'A',
+                'A#' => 'A# / Bb',
+                'B'  => 'B',
             );
+        }
+
+        /**
+         * Sanitize a submitted song key.
+         *
+         * @param string $value Raw input value.
+         *
+         * @return string Sanitized key or empty string.
+         */
+        private function sanitize_song_key( $value ) {
+            $value = sanitize_text_field( $value );
+            $value = trim( $value );
+
+            if ( '' === $value ) {
+                return '';
+            }
+
+            $allowed = array_keys( $this->get_song_keys() );
+
+            if ( in_array( $value, $allowed, true ) ) {
+                return $value;
+            }
+
+            return '';
         }
 
         /**
@@ -404,7 +547,3 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
     // Ensure the plugin is loaded.
     th_songbook();
 }
-
-
-
-

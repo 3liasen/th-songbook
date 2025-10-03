@@ -26,3 +26,8 @@
 .th-songbook-meta textarea {
     min-height: 140px;
 }
+
+.th-songbook-meta .th-songbook-select {
+    min-width: 180px;
+}
+
