@@ -47,6 +47,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
         private function __construct() {
             $this->define_constants();
             add_action( 'init', array( $this, 'register_song_post_type' ) );
+            add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
         }
 
         /**
@@ -59,8 +60,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
          */
         public function __wakeup() {
             // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Intentionally blank to prevent unserializing.
-            throw new 
-                Exception( 'Cannot unserialize singleton' );
+            throw new Exception( 'Cannot unserialize singleton' );
         }
 
         /**
@@ -105,15 +105,59 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                 'labels'             => $labels,
                 'public'             => true,
                 'has_archive'        => true,
-                'show_in_menu'       => true,
-                'menu_position'      => 20,
-                'menu_icon'          => 'dashicons-playlist-audio',
+                'show_in_menu'       => 'th-songbook',
                 'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'revisions' ),
                 'rewrite'            => array( 'slug' => 'songbook' ),
                 'show_in_rest'       => true,
             );
 
             register_post_type( 'th_song', $args );
+        }
+
+        /**
+         * Register the admin menu structure for the plugin.
+         */
+        public function register_admin_menu() {
+            $capability = 'edit_posts';
+
+            add_menu_page(
+                __( 'TH Songbook', 'th-songbook' ),
+                __( 'TH Songbook', 'th-songbook' ),
+                $capability,
+                'th-songbook',
+                array( $this, 'render_admin_dashboard' ),
+                'dashicons-playlist-audio',
+                20
+            );
+
+            add_submenu_page(
+                'th-songbook',
+                __( 'Gigs', 'th-songbook' ),
+                __( 'Gigs', 'th-songbook' ),
+                $capability,
+                'th-songbook-gigs',
+                array( $this, 'render_gigs_page' )
+            );
+        }
+
+        /**
+         * Render the overview page shown when visiting the Songbook top-level menu.
+         */
+        public function render_admin_dashboard() {
+            echo '<div class="wrap">';
+            echo '<h1>' . esc_html__( 'TH Songbook', 'th-songbook' ) . '</h1>';
+            echo '<p>' . esc_html__( 'Select a submenu item to manage gigs or songs.', 'th-songbook' ) . '</p>';
+            echo '</div>';
+        }
+
+        /**
+         * Render the placeholder page for managing gigs.
+         */
+        public function render_gigs_page() {
+            echo '<div class="wrap">';
+            echo '<h1>' . esc_html__( 'Gigs', 'th-songbook' ) . '</h1>';
+            echo '<p>' . esc_html__( 'Gig management tools will live here.', 'th-songbook' ) . '</p>';
+            echo '</div>';
         }
     }
 
@@ -127,4 +171,5 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
     // Ensure the plugin is loaded.
     th_songbook();
 }
+
 
