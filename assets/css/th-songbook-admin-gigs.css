@@ -1,0 +1,28 @@
+.th-songbook-meta .th-songbook-field {
+    margin-bottom: 1rem;
+}
+
+.th-songbook-meta .th-songbook-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.th-songbook-meta .th-songbook-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+}
+
+.th-songbook-meta .th-songbook-inline .th-songbook-field {
+    flex: 1 1 180px;
+}
+
+.th-songbook-meta input[type="date"],
+.th-songbook-meta input[type="time"] {
+    max-width: 180px;
+}
+
+.th-songbook-meta textarea {
+    min-height: 140px;
+}
