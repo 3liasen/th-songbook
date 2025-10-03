@@ -210,7 +210,6 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             $composer = get_post_meta( $post->ID, 'th_song_composer', true );
             $lyrics   = get_post_meta( $post->ID, 'th_song_lyrics', true );
             $key      = get_post_meta( $post->ID, 'th_song_key', true );
-            $keys     = $this->get_song_keys();
 
             wp_nonce_field( 'th_songbook_save_song', 'th_songbook_song_meta_nonce' );
             ?>
@@ -227,12 +226,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
 
                 <div class="th-songbook-field">
                     <label for="th_song_key"><?php esc_html_e( 'Key', 'th-songbook' ); ?></label>
-                    <select id="th_song_key" name="th_song_key" class="th-songbook-select">
-                        <option value=""><?php esc_html_e( 'Select a key', 'th-songbook' ); ?></option>
-                        <?php foreach ( $keys as $value => $label ) : ?>
-                            <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $key, $value ); ?>><?php echo esc_html( $label ); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <input type="text" class="regular-text" id="th_song_key" name="th_song_key" value="<?php echo esc_attr( $key ); ?>" />
                 </div>
             </div>
             <?php
@@ -263,7 +257,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
 
             $composer = isset( $_POST['th_song_composer'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_composer'] ) ) : '';
             $lyrics   = isset( $_POST['th_song_lyrics'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_lyrics'] ) ) : '';
-            $key      = isset( $_POST['th_song_key'] ) ? $this->sanitize_song_key( wp_unslash( $_POST['th_song_key'] ) ) : '';
+            $key      = isset( $_POST['th_song_key'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_key'] ) ) : '';
 
             $this->update_meta_value( $post_id, 'th_song_composer', $composer );
             $this->update_meta_value( $post_id, 'th_song_lyrics', $lyrics );
@@ -296,6 +290,28 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             $get_in     = get_post_meta( $post->ID, 'th_gig_get_in_time', true );
             $address    = get_post_meta( $post->ID, 'th_gig_address', true );
             $subject    = get_post_meta( $post->ID, 'th_gig_subject', true );
+
+            $stored_songs = get_post_meta( $post->ID, 'th_gig_songs', true );
+            if ( is_array( $stored_songs ) ) {
+                $selected_song_ids = array_map( 'absint', $stored_songs );
+            } elseif ( ! empty( $stored_songs ) ) {
+                $selected_song_ids = array( absint( $stored_songs ) );
+            } else {
+                $selected_song_ids = array();
+            }
+
+            $selected_song_ids = array_values( array_unique( array_filter( $selected_song_ids ) ) );
+
+            $available_songs = get_posts(
+                array(
+                    'post_type'      => 'th_song',
+                    'post_status'    => 'publish',
+                    'posts_per_page' => -1,
+                    'orderby'        => 'title',
+                    'order'          => 'ASC',
+                    'no_found_rows'  => true,
+                )
+            );
 
             wp_nonce_field( 'th_songbook_save_gig', 'th_songbook_gig_meta_nonce' );
             ?>
@@ -330,6 +346,20 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                 <div class="th-songbook-field">
                     <label for="th_gig_subject"><?php esc_html_e( 'Subject', 'th-songbook' ); ?></label>
                     <textarea class="large-text" id="th_gig_subject" name="th_gig_subject" rows="5" placeholder="<?php echo esc_attr__( 'Add notes, set list focus, or other context for the gig.', 'th-songbook' ); ?>"><?php echo esc_textarea( $subject ); ?></textarea>
+                </div>
+
+                <div class="th-songbook-field th-songbook-field--songs">
+                    <label for="th_gig_songs"><?php esc_html_e( 'Songs', 'th-songbook' ); ?></label>
+                    <?php if ( ! empty( $available_songs ) ) : ?>
+                        <select id="th_gig_songs" name="th_gig_songs[]" class="th-songbook-song-select" multiple="multiple" size="10">
+                            <?php foreach ( $available_songs as $song_post ) : ?>
+                                <option value="<?php echo esc_attr( $song_post->ID ); ?>" <?php selected( in_array( $song_post->ID, $selected_song_ids, true ) ); ?>><?php echo esc_html( get_the_title( $song_post ) ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="description"><?php esc_html_e( 'Hold CTRL (Windows) or CMD (Mac) to select multiple songs. The order saved here will match the order in this list.', 'th-songbook' ); ?></p>
+                    <?php else : ?>
+                        <p class="description"><?php esc_html_e( 'No songs available yet. Add songs first, then return to this gig.', 'th-songbook' ); ?></p>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php
@@ -371,6 +401,19 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             $this->update_meta_value( $post_id, 'th_gig_get_in_time', $get_in );
             $this->update_meta_value( $post_id, 'th_gig_address', $address );
             $this->update_meta_value( $post_id, 'th_gig_subject', $subject );
+
+            $posted_songs = array();
+            if ( isset( $_POST['th_gig_songs'] ) ) {
+                $posted_songs = array_map( 'absint', (array) wp_unslash( $_POST['th_gig_songs'] ) );
+            }
+
+            $posted_songs = array_values( array_unique( array_filter( $posted_songs ) ) );
+
+            if ( ! empty( $posted_songs ) ) {
+                update_post_meta( $post_id, 'th_gig_songs', $posted_songs );
+            } else {
+                delete_post_meta( $post_id, 'th_gig_songs' );
+            }
         }
 
         /**
@@ -419,52 +462,6 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
         }
 
         /**
-         * Provide the list of selectable song keys.
-         *
-         * @return array<string, string> Keys mapped to their labels.
-         */
-        private function get_song_keys() {
-            return array(
-                'C'  => 'C',
-                'C#' => 'C# / Db',
-                'D'  => 'D',
-                'D#' => 'D# / Eb',
-                'E'  => 'E',
-                'F'  => 'F',
-                'F#' => 'F# / Gb',
-                'G'  => 'G',
-                'G#' => 'G# / Ab',
-                'A'  => 'A',
-                'A#' => 'A# / Bb',
-                'B'  => 'B',
-            );
-        }
-
-        /**
-         * Sanitize a submitted song key.
-         *
-         * @param string $value Raw input value.
-         *
-         * @return string Sanitized key or empty string.
-         */
-        private function sanitize_song_key( $value ) {
-            $value = sanitize_text_field( $value );
-            $value = trim( $value );
-
-            if ( '' === $value ) {
-                return '';
-            }
-
-            $allowed = array_keys( $this->get_song_keys() );
-
-            if ( in_array( $value, $allowed, true ) ) {
-                return $value;
-            }
-
-            return '';
-        }
-
-        /**
          * Update or delete a meta value depending on its contents.
          *
          * @param int    $post_id  Post ID.
@@ -472,7 +469,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
          * @param string $value    Sanitized value.
          */
         private function update_meta_value( $post_id, $meta_key, $value ) {
-            if ( '' === $value ) {
+            if ( '' === $value || ( is_array( $value ) && empty( $value ) ) ) {
                 delete_post_meta( $post_id, $meta_key );
                 return;
             }

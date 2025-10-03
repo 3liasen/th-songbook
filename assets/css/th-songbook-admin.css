@@ -31,3 +31,10 @@
     min-width: 180px;
 }
 
+
+.th-songbook-meta .th-songbook-field--songs .th-songbook-song-select {
+    min-height: 180px;
+    width: 100%;
+    max-width: 420px;
+}
+
