@@ -270,14 +270,12 @@
         var html = '<section class="th-songbook-detail__section th-songbook-detail__section--song">';
 
         html += '<header class="th-songbook-detail__song-header">';
-        if ( pointer.setLabel ) {
-            var contextText = pointer.setLabel;
-            if ( typeof pointer.position === 'number' ) {
-                contextText += ' - ' + ( pointer.position + 1 );
-            }
-            html += '<p class="th-songbook-detail__song-context">' + escapeHtml( contextText ) + '</p>';
-        }
+        html += '<div class="th-songbook-detail__song-title-row">';
         html += '<h4 class="th-songbook-detail__song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</h4>';
+        if ( song.key ) {
+            html += '<span class="th-songbook-detail__song-key" aria-label="' + escapeHtml( ( strings.keyLabel || 'Key' ) + ': ' + song.key ) + '">' + escapeHtml( song.key ) + '</span>';
+        }
+        html += '</div>';
         html += '</header>';
 
         if ( song.missing ) {
@@ -286,23 +284,9 @@
             return html;
         }
 
-        var details = [];
-
         if ( song.by ) {
-            details.push( { label: strings.byLabel || 'By', value: song.by } );
-        }
-
-        if ( song.key ) {
-            details.push( { label: strings.keyLabel || 'Key', value: song.key } );
-        }
-
-        details.push( { label: strings.durationLabel || 'Time', value: song.duration || strings.noDuration || '--:--' } );
-
-        if ( details.length ) {
             html += '<dl class="th-songbook-detail__song-meta">';
-            details.forEach( function( detail ) {
-                html += '<div class="th-songbook-detail__song-meta-row"><dt>' + escapeHtml( detail.label ) + '</dt><dd>' + escapeHtml( detail.value ) + '</dd></div>';
-            } );
+            html += '<div class="th-songbook-detail__song-meta-row"><dt>' + escapeHtml( strings.byLabel || 'By' ) + '</dt><dd>' + escapeHtml( song.by ) + '</dd></div>';
             html += '</dl>';
         }
 
@@ -339,9 +323,28 @@
         if ( disabled ) {
             attrs += ' disabled';
         }
-        return '<button ' + attrs + '>' + escapeHtml( label ) + '</button>';
-    }
 
+        var iconClass = 'fa-solid ';
+        switch ( action ) {
+            case 'prev':
+                iconClass += 'fa-circle-chevron-left';
+                break;
+            case 'home':
+                iconClass += 'fa-house';
+                break;
+            case 'next':
+                iconClass += 'fa-circle-chevron-right';
+                break;
+            default:
+                iconClass += 'fa-circle';
+                break;
+        }
+
+        var iconHtml = '<span class="th-songbook-detail__nav-icon ' + iconClass + '" aria-hidden="true"></span>';
+        var srText = '<span class="th-songbook-detail__nav-label">' + escapeHtml( label ) + '</span>';
+
+        return '<button ' + attrs + '>' + iconHtml + srText + '</button>';
+    }
     function getPointerIndex( gig, setKey, songIndex ) {
         if ( ! gig || ! Array.isArray( gig.order ) ) {
             return -1;

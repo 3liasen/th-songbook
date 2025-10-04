@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 /**
  * Plugin Name: TH Songbook
  * Plugin URI: https://example.com/plugins/th-songbook
  * Description: Provides song management tools tailored for TH songbook workflows.
- * Version: 0.5.0
+ * Version: 0.6.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Jan Eliasen
@@ -623,6 +623,16 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                 $this->register_frontend_assets();
             }
 
+            if ( ! wp_style_is( 'th-songbook-fontawesome', 'registered' ) ) {
+                wp_register_style(
+                    'th-songbook-fontawesome',
+                    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
+                    array(),
+                    '6.5.1'
+                );
+            }
+
+            wp_enqueue_style( 'th-songbook-fontawesome' );
             wp_enqueue_style( 'th-songbook-frontend' );
             wp_enqueue_script( 'th-songbook-frontend' );
 

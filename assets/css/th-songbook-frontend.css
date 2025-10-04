@@ -277,3 +277,99 @@
         width: 100%;
     }
 }
+
+.th-songbook-detail__song-title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.th-songbook-detail__song-key {
+    font-size: inherit;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.th-songbook-detail__song-meta {
+    margin: 0 0 1.5rem;
+}
+
+.th-songbook-detail__nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    font-size: 1.15rem;
+}
+
+.th-songbook-detail__nav-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.th-songbook-detail__nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media screen and (orientation: portrait) and (max-width: 1300px) {
+    .th-songbook-gig-detail {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        gap: clamp(1rem, 2vh, 2.5rem);
+        padding: clamp(1rem, 2.5vh, 3rem);
+        font-size: clamp(18px, 1.5vh, 24px);
+    }
+
+    .th-songbook-detail__section--song {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        gap: clamp(1rem, 2vh, 2.5rem);
+    }
+
+    .th-songbook-detail__song-title {
+        font-size: clamp(2rem, 3vh, 3rem);
+    }
+
+    .th-songbook-detail__song-key {
+        font-size: clamp(1.8rem, 2.6vh, 2.6rem);
+    }
+
+    .th-songbook-detail__song-meta {
+        font-size: clamp(1rem, 1.6vh, 1.4rem);
+    }
+
+    .th-songbook-detail__song-content {
+        flex: 1 1 auto;
+        font-size: clamp(1rem, 1.5vh, 1.35rem);
+        line-height: 1.35;
+    }
+
+    .th-songbook-detail__song-content p {
+        margin-bottom: clamp(0.9rem, 1.6vh, 1.5rem);
+    }
+
+    .th-songbook-detail__nav {
+        margin-top: auto;
+    }
+
+    .th-songbook-detail__nav-btn {
+        padding: clamp(0.75rem, 1.8vh, 1.2rem);
+        font-size: clamp(1.1rem, 1.6vh, 1.4rem);
+    }
+
+    .th-songbook-detail__nav-icon {
+        font-size: clamp(1.8rem, 2.5vh, 2.8rem);
+    }
+}
