@@ -328,33 +328,6 @@
             };
         }
 
-        var contentHtml = song.content || '<p>' + escapeHtml( strings.noSongs || '' ) + '</p>';
-        html += '<div class="th-songbook-detail__song-content">' + contentHtml + '</div>';
-        html += '</section>';
-
-        return {
-            html: html,
-            by: song.by ? String( song.by ) : ''
-        };
-    }
-        var song = pointer.song;
-        var html = '<section class="th-songbook-detail__section th-songbook-detail__section--song">';
-
-        html += '<header class="th-songbook-detail__song-header">';
-        html += '<div class="th-songbook-detail__song-title-row">';
-        html += '<h4 class="th-songbook-detail__song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</h4>';
-        if ( song.key ) {
-            html += '<span class="th-songbook-detail__song-key" aria-label="' + escapeHtml( ( strings.keyLabel || 'Key' ) + ': ' + song.key ) + '">' + escapeHtml( song.key ) + '</span>';
-        }
-        html += '</div>';
-        html += '</header>';
-
-        if ( song.missing ) {
-            html += '<p class="th-songbook-detail__empty">' + escapeHtml( strings.missingSong || 'This song is no longer available.' ) + '</p>';
-            html += '</section>';
-            return html;
-        }
-
         if ( song.by ) {
             html += '<dl class="th-songbook-detail__song-meta">';
             html += '<div class="th-songbook-detail__song-meta-row"><dt>' + escapeHtml( strings.byLabel || 'By' ) + '</dt><dd>' + escapeHtml( song.by ) + '</dd></div>';
@@ -365,7 +338,10 @@
         html += '<div class="th-songbook-detail__song-content">' + contentHtml + '</div>';
         html += '</section>';
 
-        return html;
+        return {
+            html: html,
+            by: song.by ? String( song.by ) : ''
+        };
     }
 
     function renderNav( gig ) {
@@ -492,28 +468,6 @@
         if ( disabled ) {
             attrs += ' disabled';
         }
-
-        var iconClass = 'fa-solid ';
-        switch ( action ) {
-            case 'prev':
-                iconClass += 'fa-circle-chevron-left';
-                break;
-            case 'home':
-                iconClass += 'fa-house';
-                break;
-            case 'next':
-                iconClass += 'fa-circle-chevron-right';
-                break;
-            default:
-                iconClass += 'fa-circle';
-                break;
-        }
-
-        var iconHtml = '<span class="th-songbook-detail__nav-icon ' + iconClass + '" aria-hidden="true"></span>';
-        var srText = '<span class="th-songbook-detail__nav-label">' + escapeHtml( label ) + '</span>';
-
-        return '<button ' + attrs + '>' + iconHtml + srText + '</button>';
-    }
 
         var iconClass = 'fa-solid ';
         switch ( action ) {
