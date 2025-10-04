@@ -1,9 +1,11 @@
-(function() {
+﻿(function() {
     'use strict';
 
     var data = window.thSongbookData || {};
     var gigItems = data.gigs && data.gigs.items ? data.gigs.items : {};
     var strings = data.strings || {};
+    var displaySettings = data.settings || {};
+    var layoutFrame = null;
 
     var listEl = document.querySelector('[data-songbook-gig-list]');
     var detailEl = document.querySelector('[data-songbook-gig-detail]');
@@ -22,6 +24,17 @@
         gigId: null,
         index: null
     };
+
+    window.addEventListener('resize', function() {
+
+        if ( state.index !== null ) {
+
+            scheduleSongLayout();
+
+        }
+
+    });
+
 
     listEl.addEventListener('click', function(event) {
         var button = event.target.closest('[data-gig-trigger]');
@@ -135,11 +148,35 @@
         var isSongView = state.index !== null;
         var headerHtml = isSongView ? '' : renderHeader( gig );
         var metaHtml = isSongView ? '' : renderGigMeta( gig );
-        var contentHtml = isSongView ? renderSongView( gig, state.index ) : renderHomeView( gig );
-        var navHtml = renderNav( gig );
+        var songViewResult = null;
+        var contentHtml;
 
-        detailBody.innerHTML = headerHtml + metaHtml + contentHtml + navHtml;
-    }
+        if ( isSongView ) {
+            songViewResult = renderSongView( gig, state.index );
+            contentHtml = songViewResult.html;
+        } else {
+            contentHtml = renderHomeView( gig );
+        }
+
+        var navHtml = renderNav( gig );
+        var footerHtml = navHtml;
+
+        if ( isSongView ) {
+            footerHtml = '<div class="th-songbook-detail__song-footer">' + navHtml;
+            if ( songViewResult && songViewResult.by ) {
+                footerHtml += '<p class="th-songbook-detail__song-by"><span class="th-songbook-detail__song-by-label">' + escapeHtml( strings.byLabel || 'By' ) + '</span>' + escapeHtml( songViewResult.by ) + '</p>';
+            }
+            footerHtml += '</div>';
+        }
+
+        detailBody.innerHTML = headerHtml + metaHtml + contentHtml + footerHtml;
+
+        if ( isSongView ) {
+            scheduleSongLayout();
+        } else if ( layoutFrame ) {
+            cancelAnimationFrame( layoutFrame );
+            layoutFrame = null;
+        }    }
 
     function renderHeader( gig ) {
         var parts = [];
@@ -263,9 +300,43 @@
     function renderSongView( gig, pointerIndex ) {
         var pointer = getSongPointer( gig, pointerIndex );
         if ( ! pointer ) {
-            return '<section class="th-songbook-detail__section"><p class="th-songbook-detail__empty">' + escapeHtml( strings.noSongs || 'No songs assigned yet.' ) + '</p></section>';
+            return {
+                html: '<section class="th-songbook-detail__section"><p class="th-songbook-detail__empty">' + escapeHtml( strings.noSongs || 'No songs assigned yet.' ) + '</p></section>',
+                by: ''
+            };
         }
 
+        var song = pointer.song;
+        var html = '<section class="th-songbook-detail__section th-songbook-detail__section--song">';
+
+        html += '<header class="th-songbook-detail__song-header">';
+        html += '<div class="th-songbook-detail__song-title-row">';
+        html += '<h4 class="th-songbook-detail__song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</h4>';
+        if ( song.key ) {
+            html += '<span class="th-songbook-detail__song-key" aria-label="' + escapeHtml( ( strings.keyLabel || 'Key' ) + ': ' + song.key ) + '">' + escapeHtml( song.key ) + '</span>';
+        }
+        html += '</div>';
+        html += '</header>';
+
+        if ( song.missing ) {
+            html += '<p class="th-songbook-detail__empty">' + escapeHtml( strings.missingSong || 'This song is no longer available.' ) + '</p>';
+            html += '</section>';
+
+            return {
+                html: html,
+                by: ''
+            };
+        }
+
+        var contentHtml = song.content || '<p>' + escapeHtml( strings.noSongs || '' ) + '</p>';
+        html += '<div class="th-songbook-detail__song-content">' + contentHtml + '</div>';
+        html += '</section>';
+
+        return {
+            html: html,
+            by: song.by ? String( song.by ) : ''
+        };
+    }
         var song = pointer.song;
         var html = '<section class="th-songbook-detail__section th-songbook-detail__section--song">';
 
@@ -318,11 +389,131 @@
         return html;
     }
 
+    function scheduleSongLayout() {
+        if ( layoutFrame ) {
+            cancelAnimationFrame( layoutFrame );
+        }
+
+        layoutFrame = requestAnimationFrame( function() {
+            applySongLayout( displaySettings );
+        } );
+    }
+
+    function applySongLayout( settings ) {
+        if ( ! detailBody ) {
+            return;
+        }
+
+        var songSection = detailBody.querySelector('.th-songbook-detail__section--song');
+        if ( ! songSection ) {
+            return;
+        }
+
+        var containerHeight = detailBody.clientHeight;
+        if ( containerHeight === 0 ) {
+            return;
+        }
+
+        var maxFont = parseFloat( settings.fontMax );
+        if ( ! Number.isFinite( maxFont ) || maxFont <= 0 ) {
+            maxFont = 34;
+        }
+
+        var minFont = parseFloat( settings.fontMin );
+        if ( ! Number.isFinite( minFont ) || minFont <= 0 ) {
+            minFont = 18;
+        }
+
+        if ( minFont > maxFont ) {
+            minFont = maxFont;
+        }
+
+        var ratios = {
+            title: 1.6,
+            key: 1.3,
+            meta: 0.85,
+            gap: 0.7
+        };
+
+        function setFontSize( size ) {
+            songSection.style.setProperty( '--th-songbook-dynamic-font', size + 'px' );
+            songSection.style.setProperty( '--th-songbook-dynamic-title', ( size * ratios.title ) + 'px' );
+            songSection.style.setProperty( '--th-songbook-dynamic-key', ( size * ratios.key ) + 'px' );
+            songSection.style.setProperty( '--th-songbook-dynamic-meta', ( size * ratios.meta ) + 'px' );
+            songSection.style.setProperty( '--th-songbook-dynamic-gap', ( size * ratios.gap ) + 'px' );
+        }
+
+        var targetSize = maxFont;
+        setFontSize( targetSize );
+
+        var guard = 0;
+        while ( detailBody.scrollHeight > detailBody.clientHeight + 1 && targetSize > minFont ) {
+            targetSize -= 0.5;
+            if ( targetSize < minFont ) {
+                targetSize = minFont;
+            }
+            setFontSize( targetSize );
+            guard += 1;
+            if ( guard > 160 ) {
+                break;
+            }
+        }
+
+        var fitted = targetSize;
+        var maxAllowed = parseFloat( settings.fontMax );
+        if ( ! Number.isFinite( maxAllowed ) || maxAllowed < fitted ) {
+            maxAllowed = fitted;
+        }
+
+        guard = 0;
+        while ( detailBody.scrollHeight <= detailBody.clientHeight - 24 && fitted < maxAllowed ) {
+            fitted += 0.5;
+            if ( fitted > maxAllowed ) {
+                fitted = maxAllowed;
+            }
+
+            setFontSize( fitted );
+
+            if ( detailBody.scrollHeight > detailBody.clientHeight + 1 ) {
+                fitted -= 0.5;
+                setFontSize( fitted );
+                break;
+            }
+
+            guard += 1;
+            if ( guard > 120 ) {
+                break;
+            }
+        }
+    }
+
     function buildNavButton( action, label, disabled ) {
         var attrs = 'type="button" class="th-songbook-detail__nav-btn" data-songbook-action="' + action + '"';
         if ( disabled ) {
             attrs += ' disabled';
         }
+
+        var iconClass = 'fa-solid ';
+        switch ( action ) {
+            case 'prev':
+                iconClass += 'fa-circle-chevron-left';
+                break;
+            case 'home':
+                iconClass += 'fa-house';
+                break;
+            case 'next':
+                iconClass += 'fa-circle-chevron-right';
+                break;
+            default:
+                iconClass += 'fa-circle';
+                break;
+        }
+
+        var iconHtml = '<span class="th-songbook-detail__nav-icon ' + iconClass + '" aria-hidden="true"></span>';
+        var srText = '<span class="th-songbook-detail__nav-label">' + escapeHtml( label ) + '</span>';
+
+        return '<button ' + attrs + '>' + iconHtml + srText + '</button>';
+    }
 
         var iconClass = 'fa-solid ';
         switch ( action ) {

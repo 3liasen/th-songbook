@@ -1,4 +1,5 @@
-﻿<?php
+﻿            add_action( 'admin_init', array( , 'register_display_settings' ) );
+<?php
 /**
  * Plugin Name: TH Songbook
  * Plugin URI: https://example.com/plugins/th-songbook
@@ -43,6 +44,27 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
         private $frontend_data_localized = false;
 
         /**
+         * Cached display settings merged with defaults.
+         *
+         * @var array<string, mixed>|null
+         */
+        private $display_settings = null;
+
+        /**
+         * Default display settings values.
+         *
+         * @var array<string, mixed>
+         */
+        private $display_settings_defaults = array(
+            'screen_width'   => 1200,
+            'screen_height'  => 1900,
+            'nav_background' => '#ffd319',
+            'nav_icon'       => '#000000',
+            'font_max'       => 34,
+            'font_min'       => 18,
+        );
+
+        /**
          * Retrieve the singleton instance.
          *
          * @return TH_Songbook
@@ -63,6 +85,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             add_action( 'init', array( $this, 'register_song_post_type' ) );
             add_action( 'init', array( $this, 'register_gig_post_type' ) );
             add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
+            add_action( 'admin_init', array( , 'register_display_settings' ) );
             add_action( 'add_meta_boxes', array( $this, 'register_song_meta_boxes' ) );
             add_action( 'add_meta_boxes', array( $this, 'register_gig_meta_boxes' ) );
             add_action( 'save_post_th_song', array( $this, 'save_song_meta' ), 10, 2 );
