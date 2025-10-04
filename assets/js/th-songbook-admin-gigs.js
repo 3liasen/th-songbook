@@ -1,6 +1,19 @@
 (function( $ ) {
     'use strict';
 
+    var i18nDefaults = {
+        searchPlaceholder: 'Search songs...',
+        noMatches: 'No matching songs found.',
+        removeSong: 'Remove',
+        invalidTime: 'Please enter a valid time in 24-hour format (hh:mm).',
+        noSongsAssigned: 'No songs assigned yet.',
+        dragHandle: 'Drag to reorder',
+        noDuration: '--:--'
+    };
+
+    var invalidTimeMessage = '';
+    var timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+
     function normaliseSongs( rawSongs ) {
         if ( ! Array.isArray( rawSongs ) ) {
             return [];
@@ -389,21 +402,6 @@
         updateTotal();
         setupSortable();
     }
-    var config = window.thSongbookGig || {};
-    var songs = normaliseSongs( config.songs );
-    var songIndex = buildSongIndex( songs );
-    var i18n = $.extend( {
-        searchPlaceholder: 'Search songs...',
-        noMatches: 'No matching songs found.',
-        removeSong: 'Remove',
-        invalidTime: 'Please enter a valid time in 24-hour format (hh:mm).',
-        noSongsAssigned: 'No songs assigned yet.',
-        dragHandle: 'Drag to reorder'
-    }, config.i18n || {} );
-
-    var invalidTimeMessage = i18n.invalidTime || '';
-    var timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
-
     function validateTimeField( field ) {
         var value = field.value.trim();
 
@@ -415,6 +413,13 @@
     }
 
     $( function() {
+        var config = window.thSongbookGig || {};
+        var songs = normaliseSongs( config.songs );
+        var songIndex = buildSongIndex( songs );
+        var i18n = $.extend( {}, i18nDefaults, config.i18n || {} );
+
+        invalidTimeMessage = i18n.invalidTime || '';
+
         var $timeFields = $( '.th-songbook-time-field' );
 
         if ( $timeFields.length ) {
