@@ -1,9 +1,9 @@
-<?php
+﻿<?php
 /**
  * Plugin Name: TH Songbook
  * Plugin URI: https://example.com/plugins/th-songbook
  * Description: Provides song management tools tailored for TH songbook workflows.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Jan Eliasen

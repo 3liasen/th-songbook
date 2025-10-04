@@ -435,7 +435,7 @@
 
 .th-songbook-detail__song-content {
     font-size: var(--th-songbook-dynamic-font);
-    line-height: 1.35;
+    line-height: 1.05;
 }
 
 .th-songbook-detail__song-content > * {
