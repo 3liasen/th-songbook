@@ -84,7 +84,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             add_action( 'init', array( $this, 'register_song_post_type' ) );
             add_action( 'init', array( $this, 'register_gig_post_type' ) );
             add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
-            add_action( 'admin_init', array( , 'register_display_settings' ) );
+            add_action( 'admin_init', array( $this, 'register_display_settings' ) );
             add_action( 'add_meta_boxes', array( $this, 'register_song_meta_boxes' ) );
             add_action( 'add_meta_boxes', array( $this, 'register_gig_meta_boxes' ) );
             add_action( 'save_post_th_song', array( $this, 'save_song_meta' ), 10, 2 );
@@ -104,8 +104,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
          * Prevent unserializing.
          */
         public function __wakeup() {
-            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Intentionally blank to prevent unserializing.
-            throw new Exception( 'Cannot unserialize singleton' );
+            throw new \Exception( 'Cannot unserialize singleton' );
         }
 
         /**
@@ -202,7 +201,29 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
         /**
          * Register the admin menu structure for the plugin.
          */
-        public function register_admin_menu() {\r\n             = 'edit_posts';\r\n\r\n            add_menu_page(\r\n                __( 'TH Songbook', 'th-songbook' ),\r\n                __( 'TH Songbook', 'th-songbook' ),\r\n                ,\r\n                'th-songbook',\r\n                array( , 'render_admin_dashboard' ),\r\n                'dashicons-playlist-audio',\r\n                20\r\n            );\r\n\r\n            add_submenu_page(\r\n                'th-songbook',\r\n                __( 'Display Settings', 'th-songbook' ),\r\n                __( 'Display Settings', 'th-songbook' ),\r\n                ,\r\n                'th-songbook-display-settings',\r\n                array( , 'render_display_settings_page' )\r\n            );\r\n        }\r\n
+        public function register_admin_menu() {
+            $capability = 'edit_posts';
+
+            add_menu_page(
+                __( 'TH Songbook', 'th-songbook' ),
+                __( 'TH Songbook', 'th-songbook' ),
+                $capability,
+                'th-songbook',
+                array( $this, 'render_admin_dashboard' ),
+                'dashicons-playlist-audio',
+                20
+            );
+
+            add_submenu_page(
+                'th-songbook',
+                __( 'Display Settings', 'th-songbook' ),
+                __( 'Display Settings', 'th-songbook' ),
+                $capability,
+                'th-songbook-display-settings',
+                array( $this, 'render_display_settings_page' )
+            );
+        }
+
         /**
          * Render the overview page shown when visiting the Songbook top-level menu.
          */
@@ -211,6 +232,94 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             echo '<h1>' . esc_html__( 'TH Songbook', 'th-songbook' ) . '</h1>';
             echo '<p>' . esc_html__( 'Use the Gigs submenu to schedule performances and the Songs submenu to manage your repertoire.', 'th-songbook' ) . '</p>';
             echo '</div>';
+        }
+
+        /**
+         * Settings registration for Display Settings.
+         */
+        public function register_display_settings() {
+            register_setting(
+                'th_songbook_display_group',
+                'th_songbook_display',
+                array(
+                    'type'              => 'array',
+                    'sanitize_callback' => function( $value ) {
+                        $defaults = $this->display_settings_defaults;
+                        $value    = is_array( $value ) ? $value : array();
+                        $out = array(
+                            'screen_width'   => isset( $value['screen_width'] ) ? (int) $value['screen_width'] : $defaults['screen_width'],
+                            'screen_height'  => isset( $value['screen_height'] ) ? (int) $value['screen_height'] : $defaults['screen_height'],
+                            'nav_background' => isset( $value['nav_background'] ) ? sanitize_hex_color( $value['nav_background'] ) : $defaults['nav_background'],
+                            'nav_icon'       => isset( $value['nav_icon'] ) ? sanitize_hex_color( $value['nav_icon'] ) : $defaults['nav_icon'],
+                            'font_max'       => isset( $value['font_max'] ) ? (int) $value['font_max'] : $defaults['font_max'],
+                            'font_min'       => isset( $value['font_min'] ) ? (int) $value['font_min'] : $defaults['font_min'],
+                        );
+                        if ( empty( $out['nav_background'] ) ) {
+                            $out['nav_background'] = $defaults['nav_background'];
+                        }
+                        if ( empty( $out['nav_icon'] ) ) {
+                            $out['nav_icon'] = $defaults['nav_icon'];
+                        }
+                        if ( $out['font_min'] > $out['font_max'] ) {
+                            $tmp = $out['font_min'];
+                            $out['font_min'] = $out['font_max'];
+                            $out['font_max'] = $tmp;
+                        }
+                        return $out;
+                    },
+                    'default' => $this->display_settings_defaults,
+                )
+            );
+
+            add_settings_section(
+                'th_songbook_display_section',
+                __( 'Display', 'th-songbook' ),
+                '__return_false',
+                'th_songbook_display_page'
+            );
+        }
+
+        /**
+         * Display Settings page renderer.
+         */
+        public function render_display_settings_page() {
+            $opts = get_option( 'th_songbook_display', $this->display_settings_defaults );
+            ?>
+            <div class="wrap">
+                <h1><?php echo esc_html__( 'Display Settings', 'th-songbook' ); ?></h1>
+                <form method="post" action="options.php">
+                    <?php settings_fields( 'th_songbook_display_group' ); ?>
+                    <?php do_settings_sections( 'th_songbook_display_page' ); ?>
+                    <table class="form-table" role="presentation">
+                        <tr>
+                            <th scope="row"><label for="screen_width"><?php esc_html_e( 'Screen width', 'th-songbook' ); ?></label></th>
+                            <td><input name="th_songbook_display[screen_width]" id="screen_width" type="number" class="small-text" value="<?php echo esc_attr( (int) ($opts['screen_width'] ?? 1200) ); ?>"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="screen_height"><?php esc_html_e( 'Screen height', 'th-songbook' ); ?></label></th>
+                            <td><input name="th_songbook_display[screen_height]" id="screen_height" type="number" class="small-text" value="<?php echo esc_attr( (int) ($opts['screen_height'] ?? 1900) ); ?>"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="nav_background"><?php esc_html_e( 'Nav background', 'th-songbook' ); ?></label></th>
+                            <td><input name="th_songbook_display[nav_background]" id="nav_background" type="text" class="regular-text" value="<?php echo esc_attr( $opts['nav_background'] ?? '#ffd319' ); ?>" placeholder="#rrggbb"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="nav_icon"><?php esc_html_e( 'Nav icon', 'th-songbook' ); ?></label></th>
+                            <td><input name="th_songbook_display[nav_icon]" id="nav_icon" type="text" class="regular-text" value="<?php echo esc_attr( $opts['nav_icon'] ?? '#000000' ); ?>" placeholder="#rrggbb"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="font_max"><?php esc_html_e( 'Max font size', 'th-songbook' ); ?></label></th>
+                            <td><input name="th_songbook_display[font_max]" id="font_max" type="number" class="small-text" value="<?php echo esc_attr( (int) ($opts['font_max'] ?? 34) ); ?>"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="font_min"><?php esc_html_e( 'Min font size', 'th-songbook' ); ?></label></th>
+                            <td><input name="th_songbook_display[font_min]" id="font_min" type="number" class="small-text" value="<?php echo esc_attr( (int) ($opts['font_min'] ?? 18) ); ?>"></td>
+                        </tr>
+                    </table>
+                    <?php submit_button(); ?>
+                </form>
+            </div>
+            <?php
         }
 
         /**
@@ -487,6 +596,13 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             </div>
             <?php
         }
+
+        /**
+         * Save gig metadata.
+         *
+         * @param int     $post_id Post ID.
+         * @param WP_Post $post    Post object.
+         */
         public function save_gig_meta( $post_id, $post ) {
             if ( ! isset( $_POST['th_songbook_gig_meta_nonce'] ) || ! wp_verify_nonce( $_POST['th_songbook_gig_meta_nonce'], 'th_songbook_save_gig' ) ) {
                 return;
@@ -550,6 +666,10 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                 delete_post_meta( $post_id, 'th_gig_songs' );
             }
         }
+
+        /**
+         * Enqueue admin assets where needed.
+         */
         public function enqueue_admin_assets( $hook ) {
             if ( ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
                 return;
@@ -885,7 +1005,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
                 'notes'            => $subject,
                 'notesHtml'        => $notes_html,
                 'totalSongs'       => $total_songs,
-                'songCountLabel'  => sprintf( _n( '%d song', '%d songs', $total_songs, 'th-songbook' ), $total_songs ),
+                'songCountLabel'   => sprintf( _n( '%d song', '%d songs', $total_songs, 'th-songbook' ), $total_songs ),
                 'combinedDuration' => $this->format_seconds_to_duration( $combined_seconds ),
                 'sets'             => $sets,
                 'order'            => $order,
@@ -1007,7 +1127,6 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
             );
         }
 
-
         /**
          * Retrieve all songs that can be attached to a gig.
          *
@@ -1071,6 +1190,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
 
             return $this->format_seconds_to_duration( $seconds );
         }
+
         /**
          * Convert a song duration string (mm:ss) into seconds.
          *
@@ -1138,6 +1258,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
 
             return $this->format_seconds_to_duration( $total_seconds );
         }
+
         /**
          * Sanitize a time field (hh:mm 24-hour format).
          *
