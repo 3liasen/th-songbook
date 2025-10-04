@@ -1,0 +1,95 @@
+<?php
+/**
+ * Primary bootstrap class for TH Songbook.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+class TH_Songbook {
+    /**
+     * Singleton instance.
+     *
+     * @var TH_Songbook|null
+     */
+    private static $instance = null;
+
+    /**
+     * Post type manager.
+     *
+     * @var TH_Songbook_Post_Types
+     */
+    public $post_types;
+
+    /**
+     * Admin manager.
+     *
+     * @var TH_Songbook_Admin
+     */
+    public $admin;
+
+    /**
+     * Front-end manager.
+     *
+     * @var TH_Songbook_Frontend
+     */
+    public $frontend;
+
+    /**
+     * Default display settings.
+     *
+     * @var array<string, mixed>
+     */
+    private $display_settings_defaults = array(
+        'screen_width'   => 1200,
+        'screen_height'  => 1900,
+        'nav_background' => '#ffd319',
+        'nav_icon'       => '#000000',
+        'font_max'       => 34,
+        'font_min'       => 18,
+    );
+
+    /**
+     * Retrieve the singleton instance.
+     *
+     * @return TH_Songbook
+     */
+    public static function get_instance() {
+        if ( null === self::$instance ) {
+            self::$instance = new self();
+        }
+
+        return self::$instance;
+    }
+
+    /**
+     * Constructor.
+     */
+    private function __construct() {
+        $this->post_types = new TH_Songbook_Post_Types( $this );
+        $this->admin      = new TH_Songbook_Admin( $this );
+        $this->frontend   = new TH_Songbook_Frontend( $this );
+    }
+
+    /**
+     * Prevent cloning.
+     */
+    private function __clone() {}
+
+    /**
+     * Prevent unserializing.
+     */
+    public function __wakeup() {
+        throw new \Exception( 'Cannot unserialize singleton' );
+    }
+
+    /**
+     * Retrieve display settings defaults.
+     *
+     * @return array<string, mixed>
+     */
+    public function get_display_settings_defaults() {
+        return $this->display_settings_defaults;
+    }
+}
