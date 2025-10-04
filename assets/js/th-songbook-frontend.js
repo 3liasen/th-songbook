@@ -159,15 +159,13 @@
         }
 
         var navHtml = renderNav( gig );
-        var footerHtml = navHtml;
+        var footerHtml = '<div class="th-songbook-detail__footer"><div class="th-songbook-detail__footer-inner">' + navHtml;
 
-        if ( isSongView ) {
-            footerHtml = '<div class="th-songbook-detail__song-footer">' + navHtml;
-            if ( songViewResult && songViewResult.by ) {
-                footerHtml += '<p class="th-songbook-detail__song-by"><span class="th-songbook-detail__song-by-label">' + escapeHtml( strings.byLabel || 'By' ) + '</span>' + escapeHtml( songViewResult.by ) + '</p>';
-            }
-            footerHtml += '</div>';
+        if ( isSongView && songViewResult && songViewResult.by ) {
+            footerHtml += '<p class="th-songbook-detail__footer-by"><span class="th-songbook-detail__footer-by-label">' + escapeHtml( strings.byLabel || 'By' ) + '</span>' + escapeHtml( songViewResult.by ) + '</p>';
         }
+
+        footerHtml += '</div></div>';
 
         detailBody.innerHTML = headerHtml + metaHtml + contentHtml + footerHtml;
 
@@ -176,7 +174,8 @@
         } else if ( layoutFrame ) {
             cancelAnimationFrame( layoutFrame );
             layoutFrame = null;
-        }    }
+        }
+    }
 
     function renderHeader( gig ) {
         var parts = [];
@@ -327,13 +326,6 @@
                 by: ''
             };
         }
-
-        if ( song.by ) {
-            html += '<dl class="th-songbook-detail__song-meta">';
-            html += '<div class="th-songbook-detail__song-meta-row"><dt>' + escapeHtml( strings.byLabel || 'By' ) + '</dt><dd>' + escapeHtml( song.by ) + '</dd></div>';
-            html += '</dl>';
-        }
-
         var contentHtml = song.content || '<p>' + escapeHtml( strings.noSongs || '' ) + '</p>';
         html += '<div class="th-songbook-detail__song-content">' + contentHtml + '</div>';
         html += '</section>';
@@ -563,3 +555,5 @@
             .replace( /'/g, '&#39;' );
     }
 })();
+
+
