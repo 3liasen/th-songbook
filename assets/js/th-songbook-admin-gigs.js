@@ -17,7 +17,8 @@
 
                 return {
                     id: id,
-                    title: song.title || ''
+                    title: song.title || '',
+                    duration: song.duration || ''
                 };
             } )
             .filter( Boolean );
@@ -388,7 +389,9 @@
         updateTotal();
         setupSortable();
     }
+    var config = window.thSongbookGig || {};
     var songs = normaliseSongs( config.songs );
+    var songIndex = buildSongIndex( songs );
     var i18n = $.extend( {
         searchPlaceholder: 'Search songs...',
         noMatches: 'No matching songs found.',
@@ -435,4 +438,3 @@
         } );
     } );
 })( jQuery );
-

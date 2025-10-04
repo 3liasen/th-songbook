@@ -132,22 +132,49 @@
         detailEl.classList.add( 'is-active' );
         detailEl.setAttribute( 'data-current-gig', state.gigId );
 
-        var headerHtml = renderHeader( gig );
-        var contentHtml = state.index === null ? renderHomeView( gig ) : renderSongView( gig, state.index );
+        var isSongView = state.index !== null;
+        var headerHtml = isSongView ? '' : renderHeader( gig );
+        var metaHtml = isSongView ? '' : renderGigMeta( gig );
+        var contentHtml = isSongView ? renderSongView( gig, state.index ) : renderHomeView( gig );
         var navHtml = renderNav( gig );
 
-        detailBody.innerHTML = headerHtml + contentHtml + navHtml;
+        detailBody.innerHTML = headerHtml + metaHtml + contentHtml + navHtml;
     }
 
     function renderHeader( gig ) {
+        var parts = [];
+
+        if ( gig.title ) {
+            parts.push( gig.title );
+        }
+
+        if ( gig.dateDisplay ) {
+            parts.push( gig.dateDisplay );
+        }
+
+        var headingText = parts.join( ' - ' );
+        if ( ! headingText ) {
+            headingText = gig.title || gig.dateDisplay || '';
+        }
+
+        var html = '<header class="th-songbook-gig-detail__header">';
+        html += '<h3 class="th-songbook-gig-detail__title">' + escapeHtml( headingText ) + '</h3>';
+        html += '</header>';
+
+        return html;
+    }
+
+    function renderGigMeta( gig ) {
         var metaItems = [];
 
         if ( gig.dateDisplay ) {
             var dateLine = gig.dateDisplay;
             if ( gig.timeDisplay ) {
-                dateLine += ' · ' + gig.timeDisplay;
+                dateLine += ' - ' + gig.timeDisplay;
             }
             metaItems.push( dateLine );
+        } else if ( gig.timeDisplay ) {
+            metaItems.push( gig.timeDisplay );
         }
 
         if ( gig.venue ) {
@@ -166,18 +193,15 @@
             metaItems.push( ( strings.setTotalLabel || 'Total time' ) + ': ' + gig.combinedDuration );
         }
 
-        var html = '<header class="th-songbook-gig-detail__header">';
-        html += '<h3 class="th-songbook-gig-detail__title">' + escapeHtml( gig.title || '' ) + '</h3>';
-
-        if ( metaItems.length ) {
-            html += '<ul class="th-songbook-gig-detail__meta">';
-            metaItems.forEach( function( item ) {
-                html += '<li>' + escapeHtml( item ) + '</li>';
-            } );
-            html += '</ul>';
+        if ( ! metaItems.length ) {
+            return '';
         }
 
-        html += '</header>';
+        var html = '<ul class="th-songbook-gig-detail__meta">';
+        metaItems.forEach( function( item ) {
+            html += '<li>' + escapeHtml( item ) + '</li>';
+        } );
+        html += '</ul>';
 
         return html;
     }
@@ -249,7 +273,7 @@
         if ( pointer.setLabel ) {
             var contextText = pointer.setLabel;
             if ( typeof pointer.position === 'number' ) {
-                contextText += ' · ' + ( pointer.position + 1 );
+                contextText += ' - ' + ( pointer.position + 1 );
             }
             html += '<p class="th-songbook-detail__song-context">' + escapeHtml( contextText ) + '</p>';
         }
