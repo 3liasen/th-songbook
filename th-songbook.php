@@ -1,5 +1,4 @@
-﻿            add_action( 'admin_init', array( , 'register_display_settings' ) );
-<?php
+﻿<?php
 /**
  * Plugin Name: TH Songbook
  * Plugin URI: https://example.com/plugins/th-songbook
@@ -203,20 +202,7 @@ if ( ! class_exists( 'TH_Songbook' ) ) {
         /**
          * Register the admin menu structure for the plugin.
          */
-        public function register_admin_menu() {
-            $capability = 'edit_posts';
-
-            add_menu_page(
-                __( 'TH Songbook', 'th-songbook' ),
-                __( 'TH Songbook', 'th-songbook' ),
-                $capability,
-                'th-songbook',
-                array( $this, 'render_admin_dashboard' ),
-                'dashicons-playlist-audio',
-                20
-            );
-        }
-
+        public function register_admin_menu() {\r\n             = 'edit_posts';\r\n\r\n            add_menu_page(\r\n                __( 'TH Songbook', 'th-songbook' ),\r\n                __( 'TH Songbook', 'th-songbook' ),\r\n                ,\r\n                'th-songbook',\r\n                array( , 'render_admin_dashboard' ),\r\n                'dashicons-playlist-audio',\r\n                20\r\n            );\r\n\r\n            add_submenu_page(\r\n                'th-songbook',\r\n                __( 'Display Settings', 'th-songbook' ),\r\n                __( 'Display Settings', 'th-songbook' ),\r\n                ,\r\n                'th-songbook-display-settings',\r\n                array( , 'render_display_settings_page' )\r\n            );\r\n        }\r\n
         /**
          * Render the overview page shown when visiting the Songbook top-level menu.
          */
