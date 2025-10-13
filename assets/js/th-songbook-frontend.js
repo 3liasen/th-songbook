@@ -392,7 +392,23 @@
             inlineStyles.push( '--th-songbook-column-count:' + song.columns );
         }
 
+        if ( song.fontWeight && Number.isFinite( song.fontWeight ) ) {
+            inlineStyles.push( '--th-songbook-preferred-font-weight:' + song.fontWeight );
+        }
+
+        if ( song.fontFamily ) {
+            var familyValue = String( song.fontFamily ).trim();
+            // Wrap family with quotes if it contains spaces and no quotes provided
+            if ( /\s/.test( familyValue ) && !/^['"].*['"]$/.test( familyValue ) ) {
+                familyValue = '\'' + familyValue.replace(/'/g, "\\'") + '\'';
+            }
+            inlineStyles.push( '--th-songbook-preferred-font-family:' + familyValue );
+        }
+
         var contentHtml = song.content || '<p>' + escapeHtml( strings.noSongs || '' ) + '</p>';
+        if ( song.fontFamily ) {
+            ensureGoogleFontLoaded( song.fontFamily, song.fontWeight );
+        }
         html += '<div class="th-songbook-detail__song-content"' + ( inlineStyles.length ? ' style="' + inlineStyles.join( '; ' ) + '"' : '' ) + '>' + contentHtml + '</div>';
         html += '</section>';
 
@@ -403,6 +419,26 @@
             columns: Number.isFinite( song.columns ) ? song.columns : null,
             lockHeaderSizes: hasCustomFontSize
         };
+    }
+
+    function ensureGoogleFontLoaded( family, weight ) {
+        if ( ! family ) { return; }
+
+        var fam = String( family ).trim().replace(/['"]/g, '');
+        if ( ! fam ) { return; }
+
+        var id = 'th-songbook-gfont-' + fam.replace(/\s+/g, '-').toLowerCase() + (weight ? '-' + String(weight) : '');
+        if ( document.getElementById( id ) ) {
+            return;
+        }
+
+        var urlFamily = fam.replace(/\s+/g, '+');
+        var url = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(urlFamily) + (weight ? (':wght@' + encodeURIComponent(String(weight))) : '') + '&display=swap';
+        var link = document.createElement('link');
+        link.id = id;
+        link.rel = 'stylesheet';
+        link.href = url;
+        document.head.appendChild( link );
     }
 
     function renderNav( gig ) {

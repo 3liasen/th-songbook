@@ -126,10 +126,12 @@ class TH_Songbook_Post_Types {
             $by = get_post_meta( $post->ID, 'th_song_composer', true );
         }
 
-        $key         = get_post_meta( $post->ID, 'th_song_key', true );
-        $duration    = get_post_meta( $post->ID, 'th_song_duration', true );
-        $font_size   = get_post_meta( $post->ID, 'th_song_font_size', true );
-        $column_count = get_post_meta( $post->ID, 'th_song_columns', true );
+        $key           = get_post_meta( $post->ID, 'th_song_key', true );
+        $duration      = get_post_meta( $post->ID, 'th_song_duration', true );
+        $font_size     = get_post_meta( $post->ID, 'th_song_font_size', true );
+        $font_family   = get_post_meta( $post->ID, 'th_song_font_family', true );
+        $font_weight   = get_post_meta( $post->ID, 'th_song_font_weight', true );
+        $column_count  = get_post_meta( $post->ID, 'th_song_columns', true );
 
         wp_nonce_field( 'th_songbook_save_song', 'th_songbook_song_meta_nonce' );
         ?>
@@ -155,8 +157,19 @@ class TH_Songbook_Post_Types {
                     <p class="description"><?php esc_html_e( 'Leave empty to use the global sizing.', 'th-songbook' ); ?></p>
                 </div>
                 <div class="th-songbook-field">
-                    <label for="th_song_columns"><?php esc_html_e( 'Number of columns', 'th-songbook' ); ?></label>
-                    <select id="th_song_columns" name="th_song_columns">
+                    <label for="th_song_font_weight"><?php esc_html_e( 'Font weight', 'th-songbook' ); ?></label>
+                    <input type="number" class="small-text" id="th_song_font_weight" name="th_song_font_weight" value="<?php echo esc_attr( $font_weight ); ?>" min="100" max="900" step="100" />
+                    <p class="description"><?php esc_html_e( 'Optional. Typical values: 400 (regular), 500, 600, 700. Leave empty for theme default.', 'th-songbook' ); ?></p>
+                </div>
+            </div>
+            <div class="th-songbook-field">
+                <label for="th_song_font_family"><?php esc_html_e( 'Font family (Google Fonts name)', 'th-songbook' ); ?></label>
+                <input type="text" class="regular-text" id="th_song_font_family" name="th_song_font_family" value="<?php echo esc_attr( $font_family ); ?>" placeholder="e.g. Roboto or 'Open Sans'" />
+                <p class="description"><?php esc_html_e( 'Enter the Google Font family name. The font is auto-loaded on the song page. You can include fallbacks, e.g. "Inter, sans-serif".', 'th-songbook' ); ?></p>
+            </div>
+            <div class="th-songbook-field">
+                <label for="th_song_columns"><?php esc_html_e( 'Number of columns', 'th-songbook' ); ?></label>
+                <select id="th_song_columns" name="th_song_columns">
                         <?php
                         $current_columns = (int) ( $column_count ?: 0 );
                         foreach ( array( 0 => __( 'Default', 'th-songbook' ), 1 => __( '1 Column', 'th-songbook' ), 2 => __( '2 Columns', 'th-songbook' ), 3 => __( '3 Columns', 'th-songbook' ) ) as $value => $label ) :
@@ -401,7 +414,9 @@ class TH_Songbook_Post_Types {
         $key       = isset( $_POST['th_song_key'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_key'] ) ) : '';
         $duration  = isset( $_POST['th_song_duration'] ) ? TH_Songbook_Utils::sanitize_song_duration_value( wp_unslash( $_POST['th_song_duration'] ) ) : '';
         $font_size = isset( $_POST['th_song_font_size'] ) ? absint( wp_unslash( $_POST['th_song_font_size'] ) ) : '';
-        $columns   = isset( $_POST['th_song_columns'] ) ? (int) wp_unslash( $_POST['th_song_columns'] ) : 0;
+        $columns     = isset( $_POST['th_song_columns'] ) ? (int) wp_unslash( $_POST['th_song_columns'] ) : 0;
+        $font_family = isset( $_POST['th_song_font_family'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_font_family'] ) ) : '';
+        $font_weight = isset( $_POST['th_song_font_weight'] ) ? absint( wp_unslash( $_POST['th_song_font_weight'] ) ) : '';
 
         if ( $font_size < 10 || $font_size > 80 ) {
             $font_size = '';
@@ -415,6 +430,9 @@ class TH_Songbook_Post_Types {
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_key', $key );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_duration', $duration );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_font_size', $font_size );
+        TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_font_family', $font_family );
+        if ( $font_weight < 100 || $font_weight > 900 ) { $font_weight = ''; }
+        TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_font_weight', $font_weight );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_columns', $columns );
 
         delete_post_meta( $post_id, 'th_song_composer' );
@@ -606,8 +624,10 @@ class TH_Songbook_Post_Types {
         $key        = get_post_meta( $song_id, 'th_song_key', true );
         $duration   = TH_Songbook_Utils::sanitize_song_duration_value( get_post_meta( $song_id, 'th_song_duration', true ) );
         $content    = apply_filters( 'the_content', $post->post_content );
-        $font_size  = get_post_meta( $song_id, 'th_song_font_size', true );
-        $columns    = get_post_meta( $song_id, 'th_song_columns', true );
+        $font_size   = get_post_meta( $song_id, 'th_song_font_size', true );
+        $font_family = get_post_meta( $song_id, 'th_song_font_family', true );
+        $font_weight = get_post_meta( $song_id, 'th_song_font_weight', true );
+        $columns     = get_post_meta( $song_id, 'th_song_columns', true );
 
         return array(
             'id'       => (int) $song_id,
@@ -616,8 +636,10 @@ class TH_Songbook_Post_Types {
             'key'      => $key,
             'duration' => $duration,
             'content'  => wp_kses_post( $content ),
-            'fontSize' => $font_size ? (int) $font_size : null,
-            'columns'  => $columns !== '' ? (int) $columns : null,
+            'fontSize'  => $font_size ? (int) $font_size : null,
+            'fontFamily'=> $font_family ? (string) $font_family : '',
+            'fontWeight'=> $font_weight ? (int) $font_weight : null,
+            'columns'   => $columns !== '' ? (int) $columns : null,
             'missing'  => false,
         );
     }

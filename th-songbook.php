@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'TH_SONGBOOK_VERSION' ) ) {
-    define( 'TH_SONGBOOK_VERSION', '1.6.0' );
+    define( 'TH_SONGBOOK_VERSION', '1.7.0' );
 }
 
 if ( ! defined( 'TH_SONGBOOK_PLUGIN_FILE' ) ) {
