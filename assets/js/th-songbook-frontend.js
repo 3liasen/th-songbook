@@ -25,6 +25,9 @@
         index: null
     };
 
+    var layoutOverrideSettings = null;
+    var clockTimer = null;
+
     window.addEventListener('resize', function() {
 
         if ( state.index !== null ) {
@@ -135,6 +138,8 @@
 
     function renderDetail() {
         if ( ! state.gigId || ! gigItems[ state.gigId ] ) {
+            layoutOverrideSettings = null;
+            stopClock();
             detailBody.innerHTML = '<p class="th-songbook-gig-detail__placeholder">' + escapeHtml( strings.selectGigPrompt || 'Select a gig to view the set list.' ) + '</p>';
             detailEl.classList.remove( 'is-active' );
             detailEl.removeAttribute( 'data-current-gig' );
@@ -159,7 +164,7 @@
         }
 
         var navHtml = renderNav( gig );
-        var footerHtml = '<div class="th-songbook-detail__footer"><div class="th-songbook-detail__footer-inner">' + navHtml;
+        var footerHtml = '<div class="th-songbook-detail__footer"><div class="th-songbook-detail__footer-inner"><div class="th-songbook-detail__footer-clock" data-songbook-clock></div>' + navHtml;
 
         if ( isSongView && songViewResult && songViewResult.by ) {
             footerHtml += '<p class="th-songbook-detail__footer-by"><span class="th-songbook-detail__footer-by-label">' + escapeHtml( strings.byLabel || 'By' ) + '</span>' + escapeHtml( songViewResult.by ) + '</p>';
@@ -170,11 +175,21 @@
         detailBody.innerHTML = headerHtml + metaHtml + contentHtml + footerHtml;
 
         if ( isSongView ) {
-            scheduleSongLayout();
+            var layoutSettings = Object.assign( {}, displaySettings );
+            if ( songViewResult && Number.isFinite( songViewResult.fontSize ) ) {
+                layoutSettings.fontMax = songViewResult.fontSize;
+                layoutSettings.fontMin = songViewResult.fontSize;
+            }
+            scheduleSongLayout( layoutSettings );
         } else if ( layoutFrame ) {
+            layoutOverrideSettings = null;
             cancelAnimationFrame( layoutFrame );
             layoutFrame = null;
+        } else {
+            layoutOverrideSettings = null;
         }
+
+        startClock();
     }
 
     function renderHeader( gig ) {
@@ -323,16 +338,29 @@
 
             return {
                 html: html,
-                by: ''
+                by: '',
+                fontSize: null,
+                columns: null
             };
         }
+
+        var inlineStyles = [];
+        if ( Number.isFinite( song.fontSize ) && song.fontSize > 0 ) {
+            inlineStyles.push( '--th-songbook-preferred-font:' + song.fontSize + 'px' );
+        }
+        if ( Number.isFinite( song.columns ) && song.columns > 0 ) {
+            inlineStyles.push( '--th-songbook-column-count:' + song.columns );
+        }
+
         var contentHtml = song.content || '<p>' + escapeHtml( strings.noSongs || '' ) + '</p>';
-        html += '<div class="th-songbook-detail__song-content">' + contentHtml + '</div>';
+        html += '<div class="th-songbook-detail__song-content"' + ( inlineStyles.length ? ' style="' + inlineStyles.join( '; ' ) + '"' : '' ) + '>' + contentHtml + '</div>';
         html += '</section>';
 
         return {
             html: html,
-            by: song.by ? String( song.by ) : ''
+            by: song.by ? String( song.by ) : '',
+            fontSize: Number.isFinite( song.fontSize ) ? song.fontSize : null,
+            columns: Number.isFinite( song.columns ) ? song.columns : null
         };
     }
 
@@ -357,13 +385,17 @@
         return html;
     }
 
-    function scheduleSongLayout() {
+    function scheduleSongLayout( overrideSettings ) {
+        if ( overrideSettings !== undefined ) {
+            layoutOverrideSettings = overrideSettings;
+        }
+
         if ( layoutFrame ) {
             cancelAnimationFrame( layoutFrame );
         }
 
         layoutFrame = requestAnimationFrame( function() {
-            applySongLayout( displaySettings );
+            applySongLayout( layoutOverrideSettings || displaySettings );
         } );
     }
 
@@ -553,6 +585,33 @@
             .replace( />/g, '&gt;' )
             .replace( /"/g, '&quot;' )
             .replace( /'/g, '&#39;' );
+    }
+
+    function startClock() {
+        stopClock();
+
+        var clockEl = detailBody.querySelector('[data-songbook-clock]');
+        if ( ! clockEl ) {
+            return;
+        }
+
+        var update = function() {
+            var now = new Date();
+            var hours = String( now.getHours() ).padStart( 2, '0' );
+            var minutes = String( now.getMinutes() ).padStart( 2, '0' );
+            var seconds = String( now.getSeconds() ).padStart( 2, '0' );
+            clockEl.textContent = hours + ':' + minutes + ':' + seconds;
+        };
+
+        update();
+        clockTimer = setInterval( update, 1000 );
+    }
+
+    function stopClock() {
+        if ( clockTimer ) {
+            clearInterval( clockTimer );
+            clockTimer = null;
+        }
     }
 })();
 

@@ -173,12 +173,40 @@ class TH_Songbook_Admin {
      */
     public function enqueue_admin_assets( $hook ) {
         if ( ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
-            return;
+            $screen = get_current_screen();
+            if ( empty( $screen ) ) {
+                return;
+            }
+        } else {
+            $screen = get_current_screen();
+            if ( empty( $screen ) ) {
+                return;
+            }
         }
 
-        $screen = get_current_screen();
-        if ( empty( $screen ) ) {
-            return;
+        $screen_id              = $screen->id;
+        $screen_post_type       = isset( $screen->post_type ) ? $screen->post_type : '';
+        $songbook_screen_ids    = array(
+            'toplevel_page_th-songbook',
+            'th-songbook_page_th-songbook-display-settings',
+        );
+        $is_songbook_screen = in_array( $screen_id, $songbook_screen_ids, true ) || in_array( $screen_post_type, array( 'th_song', 'th_gig' ), true );
+
+        if ( $is_songbook_screen ) {
+            wp_enqueue_style(
+                'th-songbook-adminlte',
+                'https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css',
+                array(),
+                '3.2.0'
+            );
+
+            wp_enqueue_script(
+                'th-songbook-adminlte',
+                'https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js',
+                array( 'jquery' ),
+                '3.2.0',
+                true
+            );
         }
 
         if ( in_array( $screen->post_type, array( 'th_song', 'th_gig' ), true ) ) {

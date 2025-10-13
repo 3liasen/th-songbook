@@ -82,10 +82,17 @@
         return minutesText + ':' + secondsText;
     }
 
-    function getSelectedSongIds() {
+    function getSelectedSongIds( scope ) {
         var ids = [];
+        var $items;
 
-        $( '.th-songbook-song-manager .th-songbook-song-list__item' ).each( function() {
+        if ( scope && scope.length ) {
+            $items = scope.find( '.th-songbook-song-list__item' );
+        } else {
+            $items = $( '.th-songbook-song-manager .th-songbook-song-list__item' );
+        }
+
+        $items.each( function() {
             var value = parseInt( $( this ).data( 'song-id' ), 10 );
 
             if ( Number.isNaN( value ) || ids.indexOf( value ) !== -1 ) {
@@ -172,7 +179,7 @@
 
         function buildMatches( query ) {
             var lowered = query.toLowerCase();
-            var selected = getSelectedSongIds();
+            var selected = getSelectedSongIds( $list );
             var matches = [];
 
             songs.forEach( function( song ) {
@@ -230,7 +237,7 @@
                 return;
             }
 
-            var selected = getSelectedSongIds();
+            var selected = getSelectedSongIds( $list );
             if ( selected.indexOf( id ) !== -1 ) {
                 return;
             }

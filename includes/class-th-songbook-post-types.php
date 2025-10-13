@@ -126,8 +126,10 @@ class TH_Songbook_Post_Types {
             $by = get_post_meta( $post->ID, 'th_song_composer', true );
         }
 
-        $key      = get_post_meta( $post->ID, 'th_song_key', true );
-        $duration = get_post_meta( $post->ID, 'th_song_duration', true );
+        $key         = get_post_meta( $post->ID, 'th_song_key', true );
+        $duration    = get_post_meta( $post->ID, 'th_song_duration', true );
+        $font_size   = get_post_meta( $post->ID, 'th_song_font_size', true );
+        $column_count = get_post_meta( $post->ID, 'th_song_columns', true );
 
         wp_nonce_field( 'th_songbook_save_song', 'th_songbook_song_meta_nonce' );
         ?>
@@ -145,6 +147,24 @@ class TH_Songbook_Post_Types {
             <div class="th-songbook-field">
                 <label for="th_song_duration"><?php esc_html_e( 'Time (mm:ss)', 'th-songbook' ); ?></label>
                 <input type="text" class="regular-text" id="th_song_duration" name="th_song_duration" value="<?php echo esc_attr( $duration ); ?>" pattern="^\d{1,3}:[0-5]\d$" placeholder="mm:ss" inputmode="numeric" />
+            </div>
+            <div class="th-songbook-inline">
+                <div class="th-songbook-field">
+                    <label for="th_song_font_size"><?php esc_html_e( 'Preferred font size (px)', 'th-songbook' ); ?></label>
+                    <input type="number" class="small-text" id="th_song_font_size" name="th_song_font_size" value="<?php echo esc_attr( $font_size ); ?>" min="10" max="80" step="1" />
+                    <p class="description"><?php esc_html_e( 'Leave empty to use the global sizing.', 'th-songbook' ); ?></p>
+                </div>
+                <div class="th-songbook-field">
+                    <label for="th_song_columns"><?php esc_html_e( 'Number of columns', 'th-songbook' ); ?></label>
+                    <select id="th_song_columns" name="th_song_columns">
+                        <?php
+                        $current_columns = (int) ( $column_count ?: 0 );
+                        foreach ( array( 0 => __( 'Default', 'th-songbook' ), 1 => __( '1 Column', 'th-songbook' ), 2 => __( '2 Columns', 'th-songbook' ), 3 => __( '3 Columns', 'th-songbook' ) ) as $value => $label ) :
+                            ?>
+                            <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current_columns, $value ); ?>><?php echo esc_html( $label ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             </div>
         </div>
         <?php
@@ -364,13 +384,25 @@ class TH_Songbook_Post_Types {
             return;
         }
 
-        $by       = isset( $_POST['th_song_by'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_by'] ) ) : '';
-        $key      = isset( $_POST['th_song_key'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_key'] ) ) : '';
-        $duration = isset( $_POST['th_song_duration'] ) ? TH_Songbook_Utils::sanitize_song_duration_value( wp_unslash( $_POST['th_song_duration'] ) ) : '';
+        $by        = isset( $_POST['th_song_by'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_by'] ) ) : '';
+        $key       = isset( $_POST['th_song_key'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_key'] ) ) : '';
+        $duration  = isset( $_POST['th_song_duration'] ) ? TH_Songbook_Utils::sanitize_song_duration_value( wp_unslash( $_POST['th_song_duration'] ) ) : '';
+        $font_size = isset( $_POST['th_song_font_size'] ) ? absint( wp_unslash( $_POST['th_song_font_size'] ) ) : '';
+        $columns   = isset( $_POST['th_song_columns'] ) ? (int) wp_unslash( $_POST['th_song_columns'] ) : 0;
+
+        if ( $font_size < 10 || $font_size > 80 ) {
+            $font_size = '';
+        }
+
+        if ( $columns < 0 || $columns > 3 ) {
+            $columns = 0;
+        }
 
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_by', $by );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_key', $key );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_duration', $duration );
+        TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_font_size', $font_size );
+        TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_columns', $columns );
 
         delete_post_meta( $post_id, 'th_song_composer' );
         delete_post_meta( $post_id, 'th_song_lyrics' );
@@ -543,9 +575,11 @@ class TH_Songbook_Post_Types {
             $by = get_post_meta( $song_id, 'th_song_composer', true );
         }
 
-        $key      = get_post_meta( $song_id, 'th_song_key', true );
-        $duration = TH_Songbook_Utils::sanitize_song_duration_value( get_post_meta( $song_id, 'th_song_duration', true ) );
-        $content  = apply_filters( 'the_content', $post->post_content );
+        $key        = get_post_meta( $song_id, 'th_song_key', true );
+        $duration   = TH_Songbook_Utils::sanitize_song_duration_value( get_post_meta( $song_id, 'th_song_duration', true ) );
+        $content    = apply_filters( 'the_content', $post->post_content );
+        $font_size  = get_post_meta( $song_id, 'th_song_font_size', true );
+        $columns    = get_post_meta( $song_id, 'th_song_columns', true );
 
         return array(
             'id'       => (int) $song_id,
@@ -554,6 +588,8 @@ class TH_Songbook_Post_Types {
             'key'      => $key,
             'duration' => $duration,
             'content'  => wp_kses_post( $content ),
+            'fontSize' => $font_size ? (int) $font_size : null,
+            'columns'  => $columns !== '' ? (int) $columns : null,
             'missing'  => false,
         );
     }
