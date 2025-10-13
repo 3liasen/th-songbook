@@ -203,20 +203,27 @@ class TH_Songbook_Post_Types {
         }
 
         $stored_sets = get_post_meta( $post->ID, 'th_gig_sets', true );
-        $selected_set_ids = array(
-            'set1' => array(),
-            'set2' => array(),
-        );
+        $selected_set_ids = array();
+
+        for ( $i = 1; $i <= $set_count; $i++ ) {
+            $key                    = 'set' . $i;
+            $selected_set_ids[ $key ] = array();
+        }
 
         if ( is_array( $stored_sets ) ) {
-            foreach ( $selected_set_ids as $set_key => $value ) {
+            foreach ( $selected_set_ids as $set_key => $unused ) {
                 if ( isset( $stored_sets[ $set_key ] ) ) {
                     $selected_set_ids[ $set_key ] = array_map( 'absint', (array) $stored_sets[ $set_key ] );
                 }
             }
         }
 
-        if ( empty( $selected_set_ids['set1'] ) && empty( $selected_set_ids['set2'] ) ) {
+        $has_any = false;
+        foreach ( $selected_set_ids as $ids ) {
+            if ( ! empty( $ids ) ) { $has_any = true; break; }
+        }
+
+        if ( ! $has_any ) {
             $legacy_songs = get_post_meta( $post->ID, 'th_gig_songs', true );
             if ( is_array( $legacy_songs ) ) {
                 $selected_set_ids['set1'] = array_map( 'absint', $legacy_songs );
@@ -236,10 +243,7 @@ class TH_Songbook_Post_Types {
             $available_song_map[ $song_choice['id'] ] = $song_choice;
         }
 
-        $selected_sets = array(
-            'set1' => array(),
-            'set2' => array(),
-        );
+        $selected_sets = array();
 
         foreach ( $selected_set_ids as $set_key => $song_ids ) {
             foreach ( $song_ids as $song_id ) {
@@ -261,23 +265,21 @@ class TH_Songbook_Post_Types {
             }
         }
 
-        $set_totals = array(
-            'set1' => TH_Songbook_Utils::calculate_set_total_duration( $selected_sets['set1'] ),
-            'set2' => TH_Songbook_Utils::calculate_set_total_duration( $selected_sets['set2'] ),
-        );
+        $set_totals = array();
+        foreach ( $selected_set_ids as $set_key => $unused ) {
+            $songs_in = isset( $selected_sets[ $set_key ] ) ? $selected_sets[ $set_key ] : array();
+            $set_totals[ $set_key ] = TH_Songbook_Utils::calculate_set_total_duration( $songs_in );
+        }
 
-        $set_configs = array(
-            'set1' => array(
-                'heading'  => __( '1. Set', 'th-songbook' ),
-                'input_id' => 'th-songbook-song-search-set1-' . $post->ID,
-                'field'    => 'th_gig_set1_songs[]',
-            ),
-            'set2' => array(
-                'heading'  => __( '2. Set', 'th-songbook' ),
-                'input_id' => 'th-songbook-song-search-set2-' . $post->ID,
-                'field'    => 'th_gig_set2_songs[]',
-            ),
-        );
+        $set_configs = array();
+        for ( $i = 1; $i <= $set_count; $i++ ) {
+            $key = 'set' . $i;
+            $set_configs[ $key ] = array(
+                'heading'  => sprintf( __( '%d. Set', 'th-songbook' ), $i ),
+                'input_id' => 'th-songbook-song-search-' . $key . '-' . $post->ID,
+                'field'    => 'th_gig_' . $key . '_songs[]',
+            );
+        }
 
         wp_nonce_field( 'th_songbook_save_gig', 'th_songbook_gig_meta_nonce' );
         ?>
@@ -464,31 +466,39 @@ class TH_Songbook_Post_Types {
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_subject', $subject );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_set_count', $set_count );
 
-        $set1 = array();
-        if ( isset( $_POST['th_gig_set1_songs'] ) ) {
-            $set1 = array_map( 'absint', (array) wp_unslash( $_POST['th_gig_set1_songs'] ) );
+        // Collect dynamic sets submitted according to set_count.
+        $sets_payload = array();
+        $combined     = array();
+
+        $effective_set_count = $set_count > 0 ? $set_count : 0;
+        if ( 0 === $effective_set_count ) {
+            // Fallback: detect any th_gig_setN_songs fields present.
+            foreach ( $_POST as $key => $value ) {
+                if ( preg_match( '/^th_gig_set(\d+)_songs$/', $key, $m ) ) {
+                    $n = (int) $m[1];
+                    if ( $n > $effective_set_count ) {
+                        $effective_set_count = $n;
+                    }
+                }
+            }
         }
 
-        $set2 = array();
-        if ( isset( $_POST['th_gig_set2_songs'] ) ) {
-            $set2 = array_map( 'absint', (array) wp_unslash( $_POST['th_gig_set2_songs'] ) );
+        for ( $i = 1; $i <= $effective_set_count; $i++ ) {
+            $field = 'th_gig_set' . $i . '_songs';
+            $ids   = array();
+            if ( isset( $_POST[ $field ] ) ) {
+                $ids = array_map( 'absint', (array) wp_unslash( $_POST[ $field ] ) );
+            }
+            $ids = array_values( array_unique( array_filter( $ids ) ) );
+            $sets_payload[ 'set' . $i ] = $ids;
+            $combined = array_merge( $combined, $ids );
         }
 
-        $set1 = array_values( array_unique( array_filter( $set1 ) ) );
-        $set2 = array_values( array_unique( array_filter( $set2 ) ) );
-
-        $sets_payload = array(
-            'set1' => $set1,
-            'set2' => $set2,
-        );
-
-        if ( empty( $set1 ) && empty( $set2 ) ) {
+        if ( empty( $sets_payload ) ) {
             delete_post_meta( $post_id, 'th_gig_sets' );
         } else {
             update_post_meta( $post_id, 'th_gig_sets', $sets_payload );
         }
-
-        $combined = array_merge( $set1, $set2 );
 
         if ( ! empty( $combined ) ) {
             update_post_meta( $post_id, 'th_gig_songs', $combined );
@@ -536,32 +546,31 @@ class TH_Songbook_Post_Types {
      * @return array<string, array<int>>
      */
     public function get_gig_setlists( $gig_id ) {
-        $sets = array(
-            'set1' => array(),
-            'set2' => array(),
-        );
-
         $stored_sets = get_post_meta( $gig_id, 'th_gig_sets', true );
+        $sets        = array();
 
         if ( is_array( $stored_sets ) ) {
-            foreach ( $sets as $set_key => $unused ) {
-                if ( isset( $stored_sets[ $set_key ] ) ) {
-                    $sets[ $set_key ] = array_map( 'absint', (array) $stored_sets[ $set_key ] );
-                }
+            // Keep keys in natural set order (set1, set2, ...)
+            $keys = array_keys( $stored_sets );
+            usort( $keys, function( $a, $b ) {
+                $na = (int) preg_replace( '/[^\d]/', '', $a );
+                $nb = (int) preg_replace( '/[^\d]/', '', $b );
+                return $na <=> $nb;
+            } );
+
+            foreach ( $keys as $key ) {
+                $ids       = isset( $stored_sets[ $key ] ) ? (array) $stored_sets[ $key ] : array();
+                $sets[ $key ] = array_values( array_unique( array_map( 'absint', array_filter( $ids ) ) ) );
             }
         }
 
-        if ( empty( $sets['set1'] ) && empty( $sets['set2'] ) ) {
+        if ( empty( $sets ) ) {
             $legacy = get_post_meta( $gig_id, 'th_gig_songs', true );
             if ( is_array( $legacy ) ) {
                 $sets['set1'] = array_map( 'absint', $legacy );
             } elseif ( ! empty( $legacy ) ) {
                 $sets['set1'] = array( absint( $legacy ) );
             }
-        }
-
-        foreach ( $sets as $key => $song_ids ) {
-            $sets[ $key ] = array_values( array_unique( array_filter( $song_ids ) ) );
         }
 
         return $sets;
@@ -613,3 +622,4 @@ class TH_Songbook_Post_Types {
         );
     }
 }
+

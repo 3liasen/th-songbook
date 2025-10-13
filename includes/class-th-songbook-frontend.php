@@ -283,18 +283,27 @@ class TH_Songbook_Frontend {
 
         $set_ids   = $this->post_types->get_gig_setlists( $gig_id );
         $set_count = (int) get_post_meta( $gig_id, 'th_gig_set_count', true );
-        $set_labels = array(
-            'set1' => __( '1. Set', 'th-songbook' ),
-            'set2' => __( '2. Set', 'th-songbook' ),
-        );
 
         $sets            = array();
         $order           = array();
         $total_songs     = 0;
         $combined_seconds = 0;
 
-        foreach ( array( 'set1', 'set2' ) as $set_key ) {
-            $song_ids = isset( $set_ids[ $set_key ] ) ? $set_ids[ $set_key ] : array();
+        $ordered_keys = array_keys( $set_ids );
+        // Natural order by numeric suffix.
+        usort( $ordered_keys, function( $a, $b ) {
+            $na = (int) preg_replace( '/[^\d]/', '', $a );
+            $nb = (int) preg_replace( '/[^\d]/', '', $b );
+            return $na <=> $nb;
+        } );
+
+        if ( $set_count > 0 && count( $ordered_keys ) > $set_count ) {
+            $ordered_keys = array_slice( $ordered_keys, 0, $set_count );
+        }
+
+        $index_for_label = 0;
+        foreach ( $ordered_keys as $set_key ) {
+            $song_ids = isset( $set_ids[ $set_key ] ) ? (array) $set_ids[ $set_key ] : array();
             $songs    = array();
 
             foreach ( $song_ids as $index => $song_id ) {
@@ -314,9 +323,10 @@ class TH_Songbook_Frontend {
                 );
             }
 
+            $index_for_label++;
             $sets[] = array(
                 'key'           => $set_key,
-                'label'         => isset( $set_labels[ $set_key ] ) ? $set_labels[ $set_key ] : ucfirst( $set_key ),
+                'label'         => sprintf( __( '%d. Set', 'th-songbook' ), $index_for_label ),
                 'songs'         => $songs,
                 'totalDuration' => TH_Songbook_Utils::calculate_set_total_duration( $songs ),
             );
