@@ -144,8 +144,11 @@ class TH_Songbook_Admin {
      * Render the Display Settings page.
      */
     public function render_display_settings_page() {
-         = ->plugin->get_display_settings_defaults();
-             = get_option( 'th_songbook_display',  );
+        $defaults = $this->plugin->get_display_settings_defaults();
+        $settings = wp_parse_args(
+            get_option( 'th_songbook_display', array() ),
+            $defaults
+        );
         ?>
         <div class="wrap th-songbook-adminlte">
             <div class="card">
@@ -159,35 +162,35 @@ class TH_Songbook_Admin {
                         <table class="form-table" role="presentation">
                             <tr>
                                 <th scope="row"><label for="screen_width"><?php esc_html_e( 'Screen width', 'th-songbook' ); ?></label></th>
-                                <td><input name="th_songbook_display[screen_width]" id="screen_width" type="number" class="small-text" value="<?php echo esc_attr( (int) ( ['screen_width'] ?? 1200 ) ); ?>"></td>
+                                <td><input name="th_songbook_display[screen_width]" id="screen_width" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['screen_width'] ); ?>"></td>
                             </tr>
                             <tr>
                                 <th scope="row"><label for="screen_height"><?php esc_html_e( 'Screen height', 'th-songbook' ); ?></label></th>
-                                <td><input name="th_songbook_display[screen_height]" id="screen_height" type="number" class="small-text" value="<?php echo esc_attr( (int) ( ['screen_height'] ?? 1900 ) ); ?>"></td>
+                                <td><input name="th_songbook_display[screen_height]" id="screen_height" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['screen_height'] ); ?>"></td>
                             </tr>
                             <tr>
                                 <th scope="row"><label for="nav_background"><?php esc_html_e( 'Nav background', 'th-songbook' ); ?></label></th>
-                                <td><input name="th_songbook_display[nav_background]" id="nav_background" type="text" class="regular-text" value="<?php echo esc_attr( ['nav_background'] ?? '#ffd319' ); ?>" placeholder="#rrggbb"></td>
+                                <td><input name="th_songbook_display[nav_background]" id="nav_background" type="text" class="regular-text" value="<?php echo esc_attr( $settings['nav_background'] ); ?>" placeholder="#rrggbb"></td>
                             </tr>
                             <tr>
                                 <th scope="row"><label for="nav_icon"><?php esc_html_e( 'Nav icon', 'th-songbook' ); ?></label></th>
-                                <td><input name="th_songbook_display[nav_icon]" id="nav_icon" type="text" class="regular-text" value="<?php echo esc_attr( ['nav_icon'] ?? '#000000' ); ?>" placeholder="#rrggbb"></td>
+                                <td><input name="th_songbook_display[nav_icon]" id="nav_icon" type="text" class="regular-text" value="<?php echo esc_attr( $settings['nav_icon'] ); ?>" placeholder="#rrggbb"></td>
                             </tr>
                             <tr>
                                 <th scope="row"><label for="font_max"><?php esc_html_e( 'Max font size', 'th-songbook' ); ?></label></th>
-                                <td><input name="th_songbook_display[font_max]" id="font_max" type="number" class="small-text" value="<?php echo esc_attr( (int) ( ['font_max'] ?? 34 ) ); ?>"></td>
+                                <td><input name="th_songbook_display[font_max]" id="font_max" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['font_max'] ); ?>"></td>
                             </tr>
                             <tr>
                                 <th scope="row"><label for="font_min"><?php esc_html_e( 'Min font size', 'th-songbook' ); ?></label></th>
-                                <td><input name="th_songbook_display[font_min]" id="font_min" type="number" class="small-text" value="<?php echo esc_attr( (int) ( ['font_min'] ?? 18 ) ); ?>"></td>
+                                <td><input name="th_songbook_display[font_min]" id="font_min" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['font_min'] ); ?>"></td>
                             </tr>
                             <tr>
                                 <th scope="row"><label for="clock_font_family"><?php esc_html_e( 'Clock font family', 'th-songbook' ); ?></label></th>
-                                <td><input name="th_songbook_display[clock_font_family]" id="clock_font_family" type="text" class="regular-text" value="<?php echo esc_attr( ['clock_font_family'] ?? ['clock_font_family'] ); ?>" placeholder="e.g. 'Roboto, sans-serif'"></td>
+                                <td><input name="th_songbook_display[clock_font_family]" id="clock_font_family" type="text" class="regular-text" value="<?php echo esc_attr( $settings['clock_font_family'] ); ?>" placeholder="e.g. 'Roboto, sans-serif'"></td>
                             </tr>
                             <tr>
                                 <th scope="row"><label for="clock_font_size"><?php esc_html_e( 'Clock font size (px)', 'th-songbook' ); ?></label></th>
-                                <td><input name="th_songbook_display[clock_font_size]" id="clock_font_size" type="number" class="small-text" value="<?php echo esc_attr( (int) ( ['clock_font_size'] ?? ['clock_font_size'] ) ); ?>" min="12" max="96" step="1"></td>
+                                <td><input name="th_songbook_display[clock_font_size]" id="clock_font_size" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['clock_font_size'] ); ?>" min="12" max="96" step="1"></td>
                             </tr>
                         </table>
                         <?php submit_button(); ?>
