@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin UI, settings, and asset handling for TH Songbook.
+ * Admin UI, settings, and asset handling for entire TH Songbook.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
