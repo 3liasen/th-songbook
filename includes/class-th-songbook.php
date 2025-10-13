@@ -52,8 +52,11 @@ class TH_Songbook {
         'clock_font_size'     => 32,
         'clock_font_weight'   => 600,
         // Global header sizes for single-song view (lyrics unaffected)
-        'song_title_font_size' => 32,
-        'song_key_font_size'   => 26,
+        'song_title_font_size'  => 32,
+        'song_key_font_size'    => 26,
+        'song_title_font_weight'=> 700,
+        'song_title_font_family'=> '',
+        'column_rule_color'     => '#e0e0e0',
         // New: URLs for dedicated pages and footer sizing.
         'song_page_url'       => '',
         'gigs_page_url'       => '',

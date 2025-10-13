@@ -129,6 +129,7 @@ class TH_Songbook_Post_Types {
         $key           = get_post_meta( $post->ID, 'th_song_key', true );
         $duration      = get_post_meta( $post->ID, 'th_song_duration', true );
         $font_size     = get_post_meta( $post->ID, 'th_song_font_size', true );
+        $line_height   = get_post_meta( $post->ID, 'th_song_line_height', true );
         $font_family   = get_post_meta( $post->ID, 'th_song_font_family', true );
         $font_weight   = get_post_meta( $post->ID, 'th_song_font_weight', true );
         $column_count  = get_post_meta( $post->ID, 'th_song_columns', true );
@@ -155,6 +156,11 @@ class TH_Songbook_Post_Types {
                     <label for="th_song_font_size"><?php esc_html_e( 'Preferred font size (px)', 'th-songbook' ); ?></label>
                     <input type="number" class="small-text" id="th_song_font_size" name="th_song_font_size" value="<?php echo esc_attr( $font_size ); ?>" min="10" max="80" step="1" />
                     <p class="description"><?php esc_html_e( 'Leave empty to use the global sizing.', 'th-songbook' ); ?></p>
+                </div>
+                <div class="th-songbook-field">
+                    <label for="th_song_line_height"><?php esc_html_e( 'Line height (e.g. 1.2)', 'th-songbook' ); ?></label>
+                    <input type="number" class="small-text" id="th_song_line_height" name="th_song_line_height" value="<?php echo esc_attr( $line_height ); ?>" min="1" max="3" step="0.05" />
+                    <p class="description"><?php esc_html_e( 'Optional. Controls vertical spacing between lines for this song only.', 'th-songbook' ); ?></p>
                 </div>
                 <div class="th-songbook-field">
                     <label for="th_song_font_weight"><?php esc_html_e( 'Font weight', 'th-songbook' ); ?></label>
@@ -416,6 +422,7 @@ class TH_Songbook_Post_Types {
         $columns     = isset( $_POST['th_song_columns'] ) ? (int) wp_unslash( $_POST['th_song_columns'] ) : 0;
         $font_family = isset( $_POST['th_song_font_family'] ) ? sanitize_text_field( wp_unslash( $_POST['th_song_font_family'] ) ) : '';
         $font_weight = isset( $_POST['th_song_font_weight'] ) ? absint( wp_unslash( $_POST['th_song_font_weight'] ) ) : '';
+        $line_height = isset( $_POST['th_song_line_height'] ) ? floatval( wp_unslash( $_POST['th_song_line_height'] ) ) : '';
 
         if ( $font_size < 10 || $font_size > 80 ) {
             $font_size = '';
@@ -423,6 +430,9 @@ class TH_Songbook_Post_Types {
 
         if ( $columns < 0 || $columns > 3 ) {
             $columns = 0;
+        }
+        if ( ! is_numeric( $line_height ) || $line_height < 1 || $line_height > 3 ) {
+            $line_height = '';
         }
 
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_by', $by );
@@ -432,6 +442,7 @@ class TH_Songbook_Post_Types {
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_font_family', $font_family );
         if ( $font_weight < 100 || $font_weight > 900 ) { $font_weight = ''; }
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_font_weight', $font_weight );
+        TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_line_height', $line_height );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_song_columns', $columns );
 
         delete_post_meta( $post_id, 'th_song_composer' );
@@ -626,6 +637,7 @@ class TH_Songbook_Post_Types {
         $font_size   = get_post_meta( $song_id, 'th_song_font_size', true );
         $font_family = get_post_meta( $song_id, 'th_song_font_family', true );
         $font_weight = get_post_meta( $song_id, 'th_song_font_weight', true );
+        $line_height = get_post_meta( $song_id, 'th_song_line_height', true );
         $columns     = get_post_meta( $song_id, 'th_song_columns', true );
 
         return array(
@@ -638,6 +650,7 @@ class TH_Songbook_Post_Types {
             'fontSize'  => $font_size ? (int) $font_size : null,
             'fontFamily'=> $font_family ? (string) $font_family : '',
             'fontWeight'=> $font_weight ? (int) $font_weight : null,
+            'lineHeight'=> $line_height !== '' ? (float) $line_height : null,
             'columns'   => $columns !== '' ? (int) $columns : null,
             'missing'  => false,
         );

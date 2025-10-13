@@ -120,6 +120,9 @@ class TH_Songbook_Admin {
             'clock_font_weight' => isset( $value['clock_font_weight'] ) ? (int) $value['clock_font_weight'] : $defaults['clock_font_weight'],
             'song_title_font_size' => isset( $value['song_title_font_size'] ) ? (int) $value['song_title_font_size'] : $defaults['song_title_font_size'],
             'song_key_font_size'   => isset( $value['song_key_font_size'] ) ? (int) $value['song_key_font_size'] : $defaults['song_key_font_size'],
+            'song_title_font_weight' => isset( $value['song_title_font_weight'] ) ? (int) $value['song_title_font_weight'] : $defaults['song_title_font_weight'],
+            'song_title_font_family' => isset( $value['song_title_font_family'] ) ? sanitize_text_field( $value['song_title_font_family'] ) : $defaults['song_title_font_family'],
+            'column_rule_color'      => isset( $value['column_rule_color'] ) ? sanitize_hex_color( $value['column_rule_color'] ) : $defaults['column_rule_color'],
             'song_page_url'     => isset( $value['song_page_url'] ) ? esc_url_raw( $value['song_page_url'] ) : $defaults['song_page_url'],
             'gigs_page_url'     => isset( $value['gigs_page_url'] ) ? esc_url_raw( $value['gigs_page_url'] ) : $defaults['gigs_page_url'],
             'footer_min_height' => isset( $value['footer_min_height'] ) ? (int) $value['footer_min_height'] : $defaults['footer_min_height'],
@@ -218,6 +221,18 @@ class TH_Songbook_Admin {
                     <tr>
                         <th scope="row"><label for="song_key_font_size"><?php esc_html_e( 'Key label font size (px)', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[song_key_font_size]" id="song_key_font_size" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['song_key_font_size'] ); ?>" min="10" max="96" step="1"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="song_title_font_weight"><?php esc_html_e( 'Song title font weight', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[song_title_font_weight]" id="song_title_font_weight" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['song_title_font_weight'] ); ?>" min="100" max="900" step="100"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="song_title_font_family"><?php esc_html_e( 'Song title font family', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[song_title_font_family]" id="song_title_font_family" type="text" class="regular-text" value="<?php echo esc_attr( $settings['song_title_font_family'] ); ?>" placeholder="e.g. Inter or 'Open Sans'"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="column_rule_color"><?php esc_html_e( 'Song columns divider color', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[column_rule_color]" id="column_rule_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['column_rule_color'] ); ?>" placeholder="#e0e0e0"></td>
                     </tr>
                     <tr>
                         <th scope="row"><label for="song_page_url"><?php esc_html_e( 'Single song page URL', 'th-songbook' ); ?></label></th>

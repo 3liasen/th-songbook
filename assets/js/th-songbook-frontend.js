@@ -409,6 +409,9 @@
         if ( song.fontFamily ) {
             ensureGoogleFontLoaded( song.fontFamily, song.fontWeight );
         }
+        if ( Number.isFinite( song.lineHeight ) && song.lineHeight > 0 ) {
+            inlineStyles.push( '--th-songbook-preferred-line-height:' + song.lineHeight );
+        }
         html += '<div class="th-songbook-detail__song-content"' + ( inlineStyles.length ? ' style="' + inlineStyles.join( '; ' ) + '"' : '' ) + '>' + contentHtml + '</div>';
         html += '</section>';
 
@@ -783,6 +786,16 @@
         }
         if ( displaySettings.song_key_font_size ) {
             root.style.setProperty( '--th-songbook-header-key-size', parseInt( displaySettings.song_key_font_size, 10 ) + 'px' );
+        }
+        if ( displaySettings.column_rule_color ) {
+            root.style.setProperty( '--th-songbook-column-rule-color', String( displaySettings.column_rule_color ) );
+        }
+        if ( displaySettings.song_title_font_weight ) {
+            root.style.setProperty( '--th-songbook-title-font-weight', String( displaySettings.song_title_font_weight ) );
+        }
+        if ( displaySettings.song_title_font_family ) {
+            root.style.setProperty( '--th-songbook-title-font-family', String( displaySettings.song_title_font_family ) );
+            ensureGoogleFontLoaded( String( displaySettings.song_title_font_family ), displaySettings.song_title_font_weight );
         }
     }
 

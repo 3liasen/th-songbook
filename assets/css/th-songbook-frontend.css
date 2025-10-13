@@ -369,6 +369,8 @@
 
 .th-songbook-detail__song-title {
     font-size: var(--th-songbook-header-title-size, var(--th-songbook-dynamic-title));
+    font-family: var(--th-songbook-title-font-family, inherit);
+    font-weight: var(--th-songbook-title-font-weight, 700);
 }
 
 .th-songbook-detail__song-key {
@@ -387,9 +389,10 @@
     font-size: var(--th-songbook-preferred-font, var(--th-songbook-dynamic-font));
     font-family: var(--th-songbook-preferred-font-family, inherit);
     font-weight: var(--th-songbook-preferred-font-weight, inherit);
-    line-height: 1.3;
+    line-height: var(--th-songbook-preferred-line-height, 1.3);
     column-count: var(--th-songbook-column-count, 1);
     column-gap: clamp(1rem, 3vw, 2.5rem);
+    column-rule: 2px solid var(--th-songbook-column-rule-color, #e0e0e0);
     column-fill: balance;
 }
 
