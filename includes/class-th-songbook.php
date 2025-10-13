@@ -48,6 +48,8 @@ class TH_Songbook {
         'nav_icon'       => '#000000',
         'font_max'       => 34,
         'font_min'       => 18,
+        'clock_font_family' => 'Courier New, Courier, monospace',
+        'clock_font_size'   => 32,
     );
 
     /**
@@ -91,5 +93,16 @@ class TH_Songbook {
      */
     public function get_display_settings_defaults() {
         return $this->display_settings_defaults;
+    }
+
+    /**
+     * Retrieve merged display settings (options + defaults).
+     *
+     * @return array<string, mixed>
+     */
+    public function get_display_settings() {
+        $options = get_option( 'th_songbook_display', array() );
+
+        return wp_parse_args( is_array( $options ) ? $options : array(), $this->display_settings_defaults );
     }
 }

@@ -66,10 +66,18 @@ class TH_Songbook_Admin {
      * Admin dashboard placeholder content.
      */
     public function render_admin_dashboard() {
-        echo '<div class="wrap">';
-        echo '<h1>' . esc_html__( 'TH Songbook', 'th-songbook' ) . '</h1>';
-        echo '<p>' . esc_html__( 'Use the Gigs submenu to schedule performances and the Songs submenu to manage your repertoire.', 'th-songbook' ) . '</p>';
-        echo '</div>';
+        ?>
+        <div class="wrap th-songbook-adminlte">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="card-title mb-0"><?php echo esc_html__( 'TH Songbook', 'th-songbook' ); ?></h1>
+                </div>
+                <div class="card-body">
+                    <p><?php esc_html_e( 'Use the Gigs submenu to schedule performances and the Songs submenu to manage your repertoire.', 'th-songbook' ); ?></p>
+                </div>
+            </div>
+        </div>
+        <?php
     }
 
     /**
@@ -86,12 +94,14 @@ class TH_Songbook_Admin {
                 'sanitize_callback' => function( $value ) use ( $defaults ) {
                     $value = is_array( $value ) ? $value : array();
                     $out   = array(
-                        'screen_width'   => isset( $value['screen_width'] ) ? (int) $value['screen_width'] : $defaults['screen_width'],
-                        'screen_height'  => isset( $value['screen_height'] ) ? (int) $value['screen_height'] : $defaults['screen_height'],
-                        'nav_background' => isset( $value['nav_background'] ) ? sanitize_hex_color( $value['nav_background'] ) : $defaults['nav_background'],
-                        'nav_icon'       => isset( $value['nav_icon'] ) ? sanitize_hex_color( $value['nav_icon'] ) : $defaults['nav_icon'],
-                        'font_max'       => isset( $value['font_max'] ) ? (int) $value['font_max'] : $defaults['font_max'],
-                        'font_min'       => isset( $value['font_min'] ) ? (int) $value['font_min'] : $defaults['font_min'],
+                        'screen_width'      => isset( $value['screen_width'] ) ? (int) $value['screen_width'] : $defaults['screen_width'],
+                        'screen_height'     => isset( $value['screen_height'] ) ? (int) $value['screen_height'] : $defaults['screen_height'],
+                        'nav_background'    => isset( $value['nav_background'] ) ? sanitize_hex_color( $value['nav_background'] ) : $defaults['nav_background'],
+                        'nav_icon'          => isset( $value['nav_icon'] ) ? sanitize_hex_color( $value['nav_icon'] ) : $defaults['nav_icon'],
+                        'font_max'          => isset( $value['font_max'] ) ? (int) $value['font_max'] : $defaults['font_max'],
+                        'font_min'          => isset( $value['font_min'] ) ? (int) $value['font_min'] : $defaults['font_min'],
+                        'clock_font_family' => isset( $value['clock_font_family'] ) ? sanitize_text_field( $value['clock_font_family'] ) : $defaults['clock_font_family'],
+                        'clock_font_size'   => isset( $value['clock_font_size'] ) ? (int) $value['clock_font_size'] : $defaults['clock_font_size'],
                     );
 
                     if ( empty( $out['nav_background'] ) ) {
@@ -106,6 +116,14 @@ class TH_Songbook_Admin {
                         $tmp              = $out['font_min'];
                         $out['font_min']  = $out['font_max'];
                         $out['font_max']  = $tmp;
+                    }
+
+                    $out['clock_font_family'] = $out['clock_font_family'] ? $out['clock_font_family'] : $defaults['clock_font_family'];
+
+                    if ( $out['clock_font_size'] < 12 ) {
+                        $out['clock_font_size'] = 12;
+                    } elseif ( $out['clock_font_size'] > 96 ) {
+                        $out['clock_font_size'] = 96;
                     }
 
                     return $out;
@@ -126,42 +144,56 @@ class TH_Songbook_Admin {
      * Render the Display Settings page.
      */
     public function render_display_settings_page() {
-        $defaults = $this->plugin->get_display_settings_defaults();
-        $opts     = get_option( 'th_songbook_display', $defaults );
+         = ->plugin->get_display_settings_defaults();
+             = get_option( 'th_songbook_display',  );
         ?>
-        <div class="wrap">
-            <h1><?php echo esc_html__( 'Display Settings', 'th-songbook' ); ?></h1>
-            <form method="post" action="options.php">
-                <?php settings_fields( 'th_songbook_display_group' ); ?>
-                <?php do_settings_sections( 'th_songbook_display_page' ); ?>
-                <table class="form-table" role="presentation">
-                    <tr>
-                        <th scope="row"><label for="screen_width"><?php esc_html_e( 'Screen width', 'th-songbook' ); ?></label></th>
-                        <td><input name="th_songbook_display[screen_width]" id="screen_width" type="number" class="small-text" value="<?php echo esc_attr( (int) ( $opts['screen_width'] ?? 1200 ) ); ?>"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="screen_height"><?php esc_html_e( 'Screen height', 'th-songbook' ); ?></label></th>
-                        <td><input name="th_songbook_display[screen_height]" id="screen_height" type="number" class="small-text" value="<?php echo esc_attr( (int) ( $opts['screen_height'] ?? 1900 ) ); ?>"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="nav_background"><?php esc_html_e( 'Nav background', 'th-songbook' ); ?></label></th>
-                        <td><input name="th_songbook_display[nav_background]" id="nav_background" type="text" class="regular-text" value="<?php echo esc_attr( $opts['nav_background'] ?? '#ffd319' ); ?>" placeholder="#rrggbb"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="nav_icon"><?php esc_html_e( 'Nav icon', 'th-songbook' ); ?></label></th>
-                        <td><input name="th_songbook_display[nav_icon]" id="nav_icon" type="text" class="regular-text" value="<?php echo esc_attr( $opts['nav_icon'] ?? '#000000' ); ?>" placeholder="#rrggbb"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="font_max"><?php esc_html_e( 'Max font size', 'th-songbook' ); ?></label></th>
-                        <td><input name="th_songbook_display[font_max]" id="font_max" type="number" class="small-text" value="<?php echo esc_attr( (int) ( $opts['font_max'] ?? 34 ) ); ?>"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="font_min"><?php esc_html_e( 'Min font size', 'th-songbook' ); ?></label></th>
-                        <td><input name="th_songbook_display[font_min]" id="font_min" type="number" class="small-text" value="<?php echo esc_attr( (int) ( $opts['font_min'] ?? 18 ) ); ?>"></td>
-                    </tr>
-                </table>
-                <?php submit_button(); ?>
-            </form>
+        <div class="wrap th-songbook-adminlte">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="card-title mb-0"><?php echo esc_html__( 'Display Settings', 'th-songbook' ); ?></h1>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="options.php">
+                        <?php settings_fields( 'th_songbook_display_group' ); ?>
+                        <?php do_settings_sections( 'th_songbook_display_page' ); ?>
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th scope="row"><label for="screen_width"><?php esc_html_e( 'Screen width', 'th-songbook' ); ?></label></th>
+                                <td><input name="th_songbook_display[screen_width]" id="screen_width" type="number" class="small-text" value="<?php echo esc_attr( (int) ( ['screen_width'] ?? 1200 ) ); ?>"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="screen_height"><?php esc_html_e( 'Screen height', 'th-songbook' ); ?></label></th>
+                                <td><input name="th_songbook_display[screen_height]" id="screen_height" type="number" class="small-text" value="<?php echo esc_attr( (int) ( ['screen_height'] ?? 1900 ) ); ?>"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="nav_background"><?php esc_html_e( 'Nav background', 'th-songbook' ); ?></label></th>
+                                <td><input name="th_songbook_display[nav_background]" id="nav_background" type="text" class="regular-text" value="<?php echo esc_attr( ['nav_background'] ?? '#ffd319' ); ?>" placeholder="#rrggbb"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="nav_icon"><?php esc_html_e( 'Nav icon', 'th-songbook' ); ?></label></th>
+                                <td><input name="th_songbook_display[nav_icon]" id="nav_icon" type="text" class="regular-text" value="<?php echo esc_attr( ['nav_icon'] ?? '#000000' ); ?>" placeholder="#rrggbb"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="font_max"><?php esc_html_e( 'Max font size', 'th-songbook' ); ?></label></th>
+                                <td><input name="th_songbook_display[font_max]" id="font_max" type="number" class="small-text" value="<?php echo esc_attr( (int) ( ['font_max'] ?? 34 ) ); ?>"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="font_min"><?php esc_html_e( 'Min font size', 'th-songbook' ); ?></label></th>
+                                <td><input name="th_songbook_display[font_min]" id="font_min" type="number" class="small-text" value="<?php echo esc_attr( (int) ( ['font_min'] ?? 18 ) ); ?>"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="clock_font_family"><?php esc_html_e( 'Clock font family', 'th-songbook' ); ?></label></th>
+                                <td><input name="th_songbook_display[clock_font_family]" id="clock_font_family" type="text" class="regular-text" value="<?php echo esc_attr( ['clock_font_family'] ?? ['clock_font_family'] ); ?>" placeholder="e.g. 'Roboto, sans-serif'"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><label for="clock_font_size"><?php esc_html_e( 'Clock font size (px)', 'th-songbook' ); ?></label></th>
+                                <td><input name="th_songbook_display[clock_font_size]" id="clock_font_size" type="number" class="small-text" value="<?php echo esc_attr( (int) ( ['clock_font_size'] ?? ['clock_font_size'] ) ); ?>" min="12" max="96" step="1"></td>
+                            </tr>
+                        </table>
+                        <?php submit_button(); ?>
+                    </form>
+                </div>
+            </div>
         </div>
         <?php
     }
@@ -247,3 +279,4 @@ class TH_Songbook_Admin {
         }
     }
 }
+
