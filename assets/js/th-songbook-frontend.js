@@ -159,6 +159,9 @@
         if ( isSongView ) {
             songViewResult = renderSongView( gig, state.index );
             contentHtml = songViewResult.html;
+            gig.title = '';
+            gig.dateDisplay = '';
+            gig.timeDisplay = '';
         } else {
             contentHtml = renderHomeView( gig );
         }
@@ -614,5 +617,3 @@
         }
     }
 })();
-
-

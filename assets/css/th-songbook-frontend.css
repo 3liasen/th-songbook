@@ -426,3 +426,27 @@
     }
 }
 
+@media (min-width: 768px) and (max-width: 1024px) {
+    .th-songbook-detail__footer {
+        padding: clamp(0.8rem, 1.8vw, 1.5rem) clamp(1.5rem, 5vw, 3rem);
+        padding-bottom: calc(clamp(0.8rem, 1.8vw, 1.5rem) + 120px);
+    }
+
+    .th-songbook-detail__clock {
+        font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+    }
+
+    .th-songbook-detail__nav {
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+    }
+
+    .th-songbook-detail__nav-btn {
+        font-size: clamp(0.95rem, 1.2vw, 1.2rem);
+        padding: 0.6rem 1rem;
+    }
+
+    .th-songbook-detail__footer-inner {
+        gap: 0.6rem;
+    }
+}
