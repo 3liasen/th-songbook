@@ -5,6 +5,7 @@
     var gigItems = data.gigs && data.gigs.items ? data.gigs.items : {};
     var strings = data.strings || {};
     var displaySettings = data.settings || {};
+    var root = document.documentElement;
     var layoutFrame = null;
 
     var listEl = document.querySelector('[data-songbook-gig-list]');
@@ -20,6 +21,8 @@
         return;
     }
 
+    applyDisplaySettings();
+
     var state = {
         gigId: null,
         index: null
@@ -29,6 +32,7 @@
     var clockTimer = null;
 
     window.addEventListener('resize', function() {
+        updateFooterOffset();
 
         if ( state.index !== null ) {
 
@@ -142,6 +146,8 @@
             stopClock();
             detailBody.innerHTML = '<p class="th-songbook-gig-detail__placeholder">' + escapeHtml( strings.selectGigPrompt || 'Select a gig to view the set list.' ) + '</p>';
             detailEl.classList.remove( 'is-active' );
+            detailEl.classList.remove( 'is-song-view' );
+            detailEl.classList.add( 'is-overview' );
             detailEl.removeAttribute( 'data-current-gig' );
             return;
         }
@@ -151,6 +157,9 @@
         detailEl.setAttribute( 'data-current-gig', state.gigId );
 
         var isSongView = state.index !== null;
+        detailEl.classList.toggle( 'is-song-view', isSongView );
+        detailEl.classList.toggle( 'is-overview', ! isSongView );
+
         var headerHtml = isSongView ? '' : renderHeader( gig );
         var metaHtml = isSongView ? '' : renderGigMeta( gig );
         var songViewResult = null;
@@ -159,9 +168,6 @@
         if ( isSongView ) {
             songViewResult = renderSongView( gig, state.index );
             contentHtml = songViewResult.html;
-            gig.title = '';
-            gig.dateDisplay = '';
-            gig.timeDisplay = '';
         } else {
             contentHtml = renderHomeView( gig );
         }
@@ -176,12 +182,20 @@
         footerHtml += '</div></div>';
 
         detailBody.innerHTML = headerHtml + metaHtml + contentHtml + footerHtml;
+        updateFooterOffset();
 
         if ( isSongView ) {
             var layoutSettings = Object.assign( {}, displaySettings );
-            if ( songViewResult && Number.isFinite( songViewResult.fontSize ) ) {
-                layoutSettings.fontMax = songViewResult.fontSize;
-                layoutSettings.fontMin = songViewResult.fontSize;
+            if ( songViewResult ) {
+                if ( Number.isFinite( songViewResult.fontSize ) ) {
+                    layoutSettings.fontMax = songViewResult.fontSize;
+                    layoutSettings.fontMin = songViewResult.fontSize;
+                    layoutSettings.lockHeaderSizes = true;
+                }
+
+                if ( songViewResult.lockHeaderSizes === true ) {
+                    layoutSettings.lockHeaderSizes = true;
+                }
             }
             scheduleSongLayout( layoutSettings );
         } else if ( layoutFrame ) {
@@ -241,6 +255,10 @@
 
         if ( gig.songCountLabel ) {
             metaItems.push( gig.songCountLabel );
+        }
+
+        if ( Number.isFinite( gig.setCount ) && gig.setCount > 0 ) {
+            metaItems.push( ( strings.setCountLabel || 'Sets' ) + ': ' + gig.setCount );
         }
 
         if ( gig.combinedDuration ) {
@@ -343,12 +361,15 @@
                 html: html,
                 by: '',
                 fontSize: null,
-                columns: null
+                columns: null,
+                lockHeaderSizes: false
             };
         }
 
         var inlineStyles = [];
-        if ( Number.isFinite( song.fontSize ) && song.fontSize > 0 ) {
+        var hasCustomFontSize = Number.isFinite( song.fontSize ) && song.fontSize > 0;
+
+        if ( hasCustomFontSize ) {
             inlineStyles.push( '--th-songbook-preferred-font:' + song.fontSize + 'px' );
         }
         if ( Number.isFinite( song.columns ) && song.columns > 0 ) {
@@ -362,8 +383,9 @@
         return {
             html: html,
             by: song.by ? String( song.by ) : '',
-            fontSize: Number.isFinite( song.fontSize ) ? song.fontSize : null,
-            columns: Number.isFinite( song.columns ) ? song.columns : null
+            fontSize: hasCustomFontSize ? song.fontSize : null,
+            columns: Number.isFinite( song.columns ) ? song.columns : null,
+            lockHeaderSizes: hasCustomFontSize
         };
     }
 
@@ -372,7 +394,7 @@
         var hasSongs = order.length > 0;
 
         var prevDisabled = state.index === null;
-        var homeDisabled = state.index === null;
+        var homeDisabled = ! state.gigId;
         var nextDisabled = ! hasSongs;
 
         if ( hasSongs && state.index !== null ) {
@@ -412,8 +434,21 @@
             return;
         }
 
-        var containerHeight = detailBody.clientHeight;
-        if ( containerHeight === 0 ) {
+        var footer = detailBody.querySelector('.th-songbook-detail__footer');
+        var footerHeight = footer ? footer.offsetHeight : 0;
+        var availableHeight = detailEl ? detailEl.clientHeight : detailBody.clientHeight;
+
+        if ( footerHeight ) {
+            availableHeight -= footerHeight;
+        }
+
+        availableHeight -= 32;
+
+        if ( availableHeight <= 0 ) {
+            availableHeight = detailBody.clientHeight;
+        }
+
+        if ( availableHeight <= 0 ) {
             return;
         }
 
@@ -438,19 +473,35 @@
             gap: 0.7
         };
 
+        var lockHeaderSizes = !! settings.lockHeaderSizes;
+        var baseHeaderSize = parseFloat( displaySettings && displaySettings.fontMax );
+        if ( ! Number.isFinite( baseHeaderSize ) || baseHeaderSize <= 0 ) {
+            baseHeaderSize = maxFont;
+        }
+
+        function setHeaderSizes( baseSize ) {
+            songSection.style.setProperty( '--th-songbook-dynamic-title', ( baseSize * ratios.title ) + 'px' );
+            songSection.style.setProperty( '--th-songbook-dynamic-key', ( baseSize * ratios.key ) + 'px' );
+            songSection.style.setProperty( '--th-songbook-dynamic-meta', ( baseSize * ratios.meta ) + 'px' );
+        }
+
         function setFontSize( size ) {
             songSection.style.setProperty( '--th-songbook-dynamic-font', size + 'px' );
-            songSection.style.setProperty( '--th-songbook-dynamic-title', ( size * ratios.title ) + 'px' );
-            songSection.style.setProperty( '--th-songbook-dynamic-key', ( size * ratios.key ) + 'px' );
-            songSection.style.setProperty( '--th-songbook-dynamic-meta', ( size * ratios.meta ) + 'px' );
             songSection.style.setProperty( '--th-songbook-dynamic-gap', ( size * ratios.gap ) + 'px' );
+            if ( ! lockHeaderSizes ) {
+                setHeaderSizes( size );
+            }
+        }
+
+        if ( lockHeaderSizes ) {
+            setHeaderSizes( baseHeaderSize );
         }
 
         var targetSize = maxFont;
         setFontSize( targetSize );
 
         var guard = 0;
-        while ( detailBody.scrollHeight > detailBody.clientHeight + 1 && targetSize > minFont ) {
+        while ( songSection.scrollHeight > availableHeight + 1 && targetSize > minFont ) {
             targetSize -= 0.5;
             if ( targetSize < minFont ) {
                 targetSize = minFont;
@@ -469,7 +520,7 @@
         }
 
         guard = 0;
-        while ( detailBody.scrollHeight <= detailBody.clientHeight - 24 && fitted < maxAllowed ) {
+        while ( songSection.scrollHeight <= availableHeight - 24 && fitted < maxAllowed ) {
             fitted += 0.5;
             if ( fitted > maxAllowed ) {
                 fitted = maxAllowed;
@@ -477,7 +528,7 @@
 
             setFontSize( fitted );
 
-            if ( detailBody.scrollHeight > detailBody.clientHeight + 1 ) {
+            if ( songSection.scrollHeight > availableHeight + 1 ) {
                 fitted -= 0.5;
                 setFontSize( fitted );
                 break;
@@ -602,8 +653,8 @@
             var now = new Date();
             var hours = String( now.getHours() ).padStart( 2, '0' );
             var minutes = String( now.getMinutes() ).padStart( 2, '0' );
-            var seconds = String( now.getSeconds() ).padStart( 2, '0' );
-            clockEl.textContent = hours + ':' + minutes + ':' + seconds;
+            clockEl.textContent = hours + ':' + minutes;
+            updateFooterOffset();
         };
 
         update();
@@ -614,6 +665,63 @@
         if ( clockTimer ) {
             clearInterval( clockTimer );
             clockTimer = null;
+        }
+    }
+
+    function updateFooterOffset() {
+        if ( ! detailEl ) {
+            return;
+        }
+
+        var footer = detailBody.querySelector('.th-songbook-detail__footer');
+
+        if ( footer ) {
+            var offset = footer.offsetHeight + 24;
+            detailEl.style.setProperty( '--th-songbook-footer-offset', offset + 'px' );
+        } else {
+            detailEl.style.removeProperty( '--th-songbook-footer-offset' );
+        }
+    }
+
+    function applyDisplaySettings() {
+        if ( ! root || ! displaySettings ) {
+            return;
+        }
+
+        if ( displaySettings.screen_width ) {
+            root.style.setProperty( '--th-songbook-screen-max-width', parseInt( displaySettings.screen_width, 10 ) + 'px' );
+        }
+
+        if ( displaySettings.screen_height ) {
+            root.style.setProperty( '--th-songbook-screen-max-height', parseInt( displaySettings.screen_height, 10 ) + 'px' );
+        }
+
+        if ( displaySettings.nav_background ) {
+            root.style.setProperty( '--th-songbook-nav-bg', String( displaySettings.nav_background ) );
+        }
+
+        if ( displaySettings.nav_icon ) {
+            root.style.setProperty( '--th-songbook-nav-color', String( displaySettings.nav_icon ) );
+        }
+
+        if ( displaySettings.font_max ) {
+            root.style.setProperty( '--th-songbook-font-max', parseInt( displaySettings.font_max, 10 ) + 'px' );
+        }
+
+        if ( displaySettings.font_min ) {
+            root.style.setProperty( '--th-songbook-font-min', parseInt( displaySettings.font_min, 10 ) + 'px' );
+        }
+
+        if ( displaySettings.clock_font_family ) {
+            root.style.setProperty( '--th-songbook-clock-font-family', String( displaySettings.clock_font_family ) );
+        }
+
+        if ( displaySettings.clock_font_size ) {
+            root.style.setProperty( '--th-songbook-clock-font-size', parseInt( displaySettings.clock_font_size, 10 ) + 'px' );
+        }
+
+        if ( displaySettings.clock_font_weight ) {
+            root.style.setProperty( '--th-songbook-clock-font-weight', String( displaySettings.clock_font_weight ) );
         }
     }
 })();

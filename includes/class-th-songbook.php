@@ -50,6 +50,7 @@ class TH_Songbook {
         'font_min'       => 18,
         'clock_font_family' => 'Courier New, Courier, monospace',
         'clock_font_size'   => 32,
+        'clock_font_weight' => 600,
     );
 
     /**

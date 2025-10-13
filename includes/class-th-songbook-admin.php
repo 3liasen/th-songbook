@@ -117,6 +117,7 @@ class TH_Songbook_Admin {
             'font_min'          => isset( $value['font_min'] ) ? (int) $value['font_min'] : $defaults['font_min'],
             'clock_font_family' => isset( $value['clock_font_family'] ) ? sanitize_text_field( $value['clock_font_family'] ) : $defaults['clock_font_family'],
             'clock_font_size'   => isset( $value['clock_font_size'] ) ? (int) $value['clock_font_size'] : $defaults['clock_font_size'],
+            'clock_font_weight' => isset( $value['clock_font_weight'] ) ? (int) $value['clock_font_weight'] : $defaults['clock_font_weight'],
         );
 
         if ( empty( $out['nav_background'] ) ) {
@@ -139,6 +140,12 @@ class TH_Songbook_Admin {
             $out['clock_font_size'] = 12;
         } elseif ( $out['clock_font_size'] > 96 ) {
             $out['clock_font_size'] = 96;
+        }
+
+        if ( $out['clock_font_weight'] < 100 ) {
+            $out['clock_font_weight'] = 100;
+        } elseif ( $out['clock_font_weight'] > 900 ) {
+            $out['clock_font_weight'] = 900;
         }
 
         return $out;
@@ -194,6 +201,10 @@ class TH_Songbook_Admin {
                     <tr>
                         <th scope="row"><label for="clock_font_size"><?php esc_html_e( 'Clock font size (px)', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[clock_font_size]" id="clock_font_size" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['clock_font_size'] ); ?>" min="12" max="96" step="1"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="clock_font_weight"><?php esc_html_e( 'Clock font weight', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[clock_font_weight]" id="clock_font_weight" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['clock_font_weight'] ); ?>" min="100" max="900" step="100"></td>
                     </tr>
                 </table>
                 <?php submit_button(); ?>

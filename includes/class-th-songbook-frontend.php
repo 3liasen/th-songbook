@@ -160,6 +160,10 @@ class TH_Songbook_Frontend {
                 (int) $gig['totalSongs']
             );
 
+            if ( ! empty( $gig['setCountLabel'] ) ) {
+                $summary_parts[] = $gig['setCountLabel'];
+            }
+
             $summary = implode( ' - ', array_filter( $summary_parts ) );
 
             echo '<li class="th-songbook-gig-list__item">';
@@ -232,7 +236,9 @@ class TH_Songbook_Frontend {
                 'setTotalLabel'   => __( 'Total time', 'th-songbook' ),
                 'noSongs'         => __( 'No songs assigned yet.', 'th-songbook' ),
                 'noDuration'      => __( '--:--', 'th-songbook' ),
+                'setCountLabel'   => __( 'Sets', 'th-songbook' ),
             ),
+            'settings' => $this->plugin->get_display_settings(),
         );
 
         return $this->frontend_data;
@@ -275,7 +281,8 @@ class TH_Songbook_Frontend {
     private function format_gig_for_frontend( WP_Post $gig ) {
         $gig_id = $gig->ID;
 
-        $set_ids = $this->post_types->get_gig_setlists( $gig_id );
+        $set_ids   = $this->post_types->get_gig_setlists( $gig_id );
+        $set_count = (int) get_post_meta( $gig_id, 'th_gig_set_count', true );
         $set_labels = array(
             'set1' => __( '1. Set', 'th-songbook' ),
             'set2' => __( '2. Set', 'th-songbook' ),
@@ -326,6 +333,26 @@ class TH_Songbook_Frontend {
         $subject    = get_post_meta( $gig_id, 'th_gig_subject', true );
         $notes_html = $subject ? wpautop( esc_html( $subject ) ) : '';
 
+        $non_empty_sets = array_filter(
+            $set_ids,
+            static function( $ids ) {
+                return ! empty( $ids );
+            }
+        );
+
+        if ( $set_count < 1 ) {
+            $set_count = count( $non_empty_sets );
+        }
+
+        if ( $set_count < 1 ) {
+            $set_count = 1;
+        }
+
+        $set_count_label = sprintf(
+            _n( '%d set', '%d sets', $set_count, 'th-songbook' ),
+            $set_count
+        );
+
         return array(
             'id'               => (int) $gig_id,
             'title'            => get_the_title( $gig_id ),
@@ -341,6 +368,8 @@ class TH_Songbook_Frontend {
             'combinedDuration' => TH_Songbook_Utils::format_seconds_to_duration( $combined_seconds ),
             'sets'             => $sets,
             'order'            => $order,
+            'setCount'         => $set_count,
+            'setCountLabel'    => $set_count_label,
         );
     }
 

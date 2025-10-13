@@ -196,6 +196,11 @@ class TH_Songbook_Post_Types {
         $get_in     = get_post_meta( $post->ID, 'th_gig_get_in_time', true );
         $address    = get_post_meta( $post->ID, 'th_gig_address', true );
         $subject    = get_post_meta( $post->ID, 'th_gig_subject', true );
+        $set_count  = (int) get_post_meta( $post->ID, 'th_gig_set_count', true );
+
+        if ( $set_count < 1 ) {
+            $set_count = 2;
+        }
 
         $stored_sets = get_post_meta( $post->ID, 'th_gig_sets', true );
         $selected_set_ids = array(
@@ -297,6 +302,12 @@ class TH_Songbook_Post_Types {
                     <label for="th_gig_get_in_time"><?php esc_html_e( 'Get-in Time (hh:mm)', 'th-songbook' ); ?></label>
                     <input type="time" class="th-songbook-time-field" id="th_gig_get_in_time" name="th_gig_get_in_time" value="<?php echo esc_attr( $get_in ); ?>" placeholder="hh:mm" pattern="^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" inputmode="numeric" />
                 </div>
+            </div>
+
+            <div class="th-songbook-field">
+                <label for="th_gig_set_count"><?php esc_html_e( 'Number of sets', 'th-songbook' ); ?></label>
+                <input type="number" class="small-text" id="th_gig_set_count" name="th_gig_set_count" value="<?php echo esc_attr( $set_count ); ?>" min="1" max="6" step="1" />
+                <p class="description"><?php esc_html_e( 'Displayed in the gig overview and front-end set list.', 'th-songbook' ); ?></p>
             </div>
 
             <div class="th-songbook-field">
@@ -437,6 +448,13 @@ class TH_Songbook_Post_Types {
         $get_in     = isset( $_POST['th_gig_get_in_time'] ) ? TH_Songbook_Utils::sanitize_time_value( wp_unslash( $_POST['th_gig_get_in_time'] ) ) : '';
         $address    = isset( $_POST['th_gig_address'] ) ? sanitize_text_field( wp_unslash( $_POST['th_gig_address'] ) ) : '';
         $subject    = isset( $_POST['th_gig_subject'] ) ? sanitize_textarea_field( wp_unslash( $_POST['th_gig_subject'] ) ) : '';
+        $set_count  = isset( $_POST['th_gig_set_count'] ) ? absint( wp_unslash( $_POST['th_gig_set_count'] ) ) : 0;
+
+        if ( $set_count < 1 ) {
+            $set_count = 0;
+        } elseif ( $set_count > 6 ) {
+            $set_count = 6;
+        }
 
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_venue', $venue );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_date', $date );
@@ -444,6 +462,7 @@ class TH_Songbook_Post_Types {
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_get_in_time', $get_in );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_address', $address );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_subject', $subject );
+        TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_set_count', $set_count );
 
         $set1 = array();
         if ( isset( $_POST['th_gig_set1_songs'] ) ) {
