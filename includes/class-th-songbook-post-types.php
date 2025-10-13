@@ -178,7 +178,6 @@ class TH_Songbook_Post_Types {
                         <?php endforeach; ?>
                     </select>
                 </div>
-            </div>
         </div>
         <?php
     }
