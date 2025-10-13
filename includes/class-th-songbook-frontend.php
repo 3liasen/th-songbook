@@ -219,6 +219,7 @@ class TH_Songbook_Frontend {
      * @return string
      */
     public function render_song_view_shortcode( $atts ) {
+        add_filter( 'body_class', array( $this, 'add_song_view_body_class' ) );
         $atts = shortcode_atts(
             array(
                 'gig'  => isset( $_GET['gig'] ) ? sanitize_text_field( wp_unslash( $_GET['gig'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -451,5 +452,16 @@ class TH_Songbook_Frontend {
             'date' => $date_display,
             'time' => $time_display,
         );
+    }
+
+    /**
+     * Add identifying body class on single-song page.
+     *
+     * @param string[] $classes Body classes.
+     * @return string[]
+     */
+    public function add_song_view_body_class( $classes ) {
+        $classes[] = 'th-songbook-song-view-page';
+        return $classes;
     }
 }

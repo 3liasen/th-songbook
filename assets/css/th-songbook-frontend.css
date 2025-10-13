@@ -11,6 +11,16 @@
     --th-songbook-footer-offset: 220px;
 }
 
+/* Widen theme container on the dedicated single-song page to use more screen space */
+@media (min-width: 992px) {
+    .th-songbook-song-view-page body:not(.elementor-page) .site-main {
+        max-width: var(--th-songbook-screen-max-width, 1200px) !important;
+        width: 100% !important;
+        margin-top: 0 !important;
+        padding-top: 0.5rem !important;
+    }
+}
+
 .th-songbook-gig-list {
     margin-bottom: 2rem;
 }
