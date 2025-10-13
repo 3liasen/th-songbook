@@ -368,11 +368,11 @@
 }
 
 .th-songbook-detail__song-title {
-    font-size: var(--th-songbook-dynamic-title);
+    font-size: var(--th-songbook-header-title-size, var(--th-songbook-dynamic-title));
 }
 
 .th-songbook-detail__song-key {
-    font-size: var(--th-songbook-dynamic-key);
+    font-size: var(--th-songbook-header-key-size, var(--th-songbook-dynamic-key));
     font-weight: 700;
     text-transform: none;
     letter-spacing: normal;

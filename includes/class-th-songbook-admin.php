@@ -118,6 +118,8 @@ class TH_Songbook_Admin {
             'clock_font_family' => isset( $value['clock_font_family'] ) ? sanitize_text_field( $value['clock_font_family'] ) : $defaults['clock_font_family'],
             'clock_font_size'   => isset( $value['clock_font_size'] ) ? (int) $value['clock_font_size'] : $defaults['clock_font_size'],
             'clock_font_weight' => isset( $value['clock_font_weight'] ) ? (int) $value['clock_font_weight'] : $defaults['clock_font_weight'],
+            'song_title_font_size' => isset( $value['song_title_font_size'] ) ? (int) $value['song_title_font_size'] : $defaults['song_title_font_size'],
+            'song_key_font_size'   => isset( $value['song_key_font_size'] ) ? (int) $value['song_key_font_size'] : $defaults['song_key_font_size'],
             'song_page_url'     => isset( $value['song_page_url'] ) ? esc_url_raw( $value['song_page_url'] ) : $defaults['song_page_url'],
             'gigs_page_url'     => isset( $value['gigs_page_url'] ) ? esc_url_raw( $value['gigs_page_url'] ) : $defaults['gigs_page_url'],
             'footer_min_height' => isset( $value['footer_min_height'] ) ? (int) $value['footer_min_height'] : $defaults['footer_min_height'],
@@ -172,7 +174,7 @@ class TH_Songbook_Admin {
             <form method="post" action="options.php">
                 <?php settings_fields( 'th_songbook_display_group' ); ?>
                 <?php do_settings_sections( 'th_songbook_display_page' ); ?>
-        <table class="form-table" role="presentation">
+                <table class="form-table" role="presentation">
                     <tr>
                         <th scope="row"><label for="screen_width"><?php esc_html_e( 'Screen width', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[screen_width]" id="screen_width" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['screen_width'] ); ?>"></td>
@@ -208,6 +210,14 @@ class TH_Songbook_Admin {
                     <tr>
                         <th scope="row"><label for="clock_font_weight"><?php esc_html_e( 'Clock font weight', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[clock_font_weight]" id="clock_font_weight" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['clock_font_weight'] ); ?>" min="100" max="900" step="100"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="song_title_font_size"><?php esc_html_e( 'Song title font size (px)', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[song_title_font_size]" id="song_title_font_size" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['song_title_font_size'] ); ?>" min="10" max="96" step="1"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="song_key_font_size"><?php esc_html_e( 'Key label font size (px)', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[song_key_font_size]" id="song_key_font_size" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['song_key_font_size'] ); ?>" min="10" max="96" step="1"></td>
                     </tr>
                     <tr>
                         <th scope="row"><label for="song_page_url"><?php esc_html_e( 'Single song page URL', 'th-songbook' ); ?></label></th>

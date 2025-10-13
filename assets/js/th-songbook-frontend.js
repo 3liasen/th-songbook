@@ -526,7 +526,7 @@
         };
 
         var lockHeaderSizes = !! settings.lockHeaderSizes;
-        var baseHeaderSize = parseFloat( displaySettings && displaySettings.fontMax );
+        var baseHeaderSize = parseFloat( displaySettings && displaySettings.font_max );
         if ( ! Number.isFinite( baseHeaderSize ) || baseHeaderSize <= 0 ) {
             baseHeaderSize = maxFont;
         }
@@ -777,6 +777,12 @@
         }
         if ( displaySettings.footer_min_height ) {
             root.style.setProperty( '--th-songbook-footer-min-height', parseInt( displaySettings.footer_min_height, 10 ) + 'px' );
+        }
+        if ( displaySettings.song_title_font_size ) {
+            root.style.setProperty( '--th-songbook-header-title-size', parseInt( displaySettings.song_title_font_size, 10 ) + 'px' );
+        }
+        if ( displaySettings.song_key_font_size ) {
+            root.style.setProperty( '--th-songbook-header-key-size', parseInt( displaySettings.song_key_font_size, 10 ) + 'px' );
         }
     }
 
