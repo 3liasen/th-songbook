@@ -235,6 +235,8 @@
 
 .th-songbook-detail__song-header {
     margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--th-songbook-column-rule-color, #e0e0e0);
 }
 
 .th-songbook-detail__song-context {
