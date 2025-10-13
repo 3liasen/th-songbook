@@ -460,7 +460,9 @@
 @media (min-width: 768px) and (max-width: 1024px) {
     .th-songbook-detail__footer {
         padding: clamp(0.8rem, 1.8vw, 1.5rem) clamp(1.5rem, 5vw, 3rem);
-        padding-bottom: calc(clamp(0.8rem, 1.8vw, 1.5rem) + 120px);
+        /* Remove fixed 120px extra padding on tablets; use safe-area instead */
+        padding-bottom: calc(clamp(0.8rem, 1.8vw, 1.5rem) + env(safe-area-inset-bottom, 0px));
+        min-height: var(--th-songbook-footer-min-height, clamp(3.5rem, 3.5vw, 4.5rem));
     }
 
     .th-songbook-detail__clock {
