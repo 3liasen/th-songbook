@@ -91,44 +91,8 @@ class TH_Songbook_Admin {
             'th_songbook_display',
             array(
                 'type'              => 'array',
-                'sanitize_callback' => function( $value ) use ( $defaults ) {
-                    $value = is_array( $value ) ? $value : array();
-                    $out   = array(
-                        'screen_width'      => isset( $value['screen_width'] ) ? (int) $value['screen_width'] : $defaults['screen_width'],
-                        'screen_height'     => isset( $value['screen_height'] ) ? (int) $value['screen_height'] : $defaults['screen_height'],
-                        'nav_background'    => isset( $value['nav_background'] ) ? sanitize_hex_color( $value['nav_background'] ) : $defaults['nav_background'],
-                        'nav_icon'          => isset( $value['nav_icon'] ) ? sanitize_hex_color( $value['nav_icon'] ) : $defaults['nav_icon'],
-                        'font_max'          => isset( $value['font_max'] ) ? (int) $value['font_max'] : $defaults['font_max'],
-                        'font_min'          => isset( $value['font_min'] ) ? (int) $value['font_min'] : $defaults['font_min'],
-                        'clock_font_family' => isset( $value['clock_font_family'] ) ? sanitize_text_field( $value['clock_font_family'] ) : $defaults['clock_font_family'],
-                        'clock_font_size'   => isset( $value['clock_font_size'] ) ? (int) $value['clock_font_size'] : $defaults['clock_font_size'],
-                    );
-
-                    if ( empty( $out['nav_background'] ) ) {
-                        $out['nav_background'] = $defaults['nav_background'];
-                    }
-
-                    if ( empty( $out['nav_icon'] ) ) {
-                        $out['nav_icon'] = $defaults['nav_icon'];
-                    }
-
-                    if ( $out['font_min'] > $out['font_max'] ) {
-                        $tmp              = $out['font_min'];
-                        $out['font_min']  = $out['font_max'];
-                        $out['font_max']  = $tmp;
-                    }
-
-                    $out['clock_font_family'] = $out['clock_font_family'] ? $out['clock_font_family'] : $defaults['clock_font_family'];
-
-                    if ( $out['clock_font_size'] < 12 ) {
-                        $out['clock_font_size'] = 12;
-                    } elseif ( $out['clock_font_size'] > 96 ) {
-                        $out['clock_font_size'] = 96;
-                    }
-
-                    return $out;
-                },
-                'default' => $defaults,
+                'sanitize_callback' => array( $this, 'sanitize_display_settings' ),
+                'default'           => $defaults,
             )
         );
 
@@ -138,6 +102,52 @@ class TH_Songbook_Admin {
             '__return_false',
             'th_songbook_display_page'
         );
+    }
+
+    /**
+     * Sanitize display settings (moved from closure for PHP compatibility).
+     *
+     * @param mixed $value Raw option value.
+     * @return array Sanitized settings.
+     */
+    public function sanitize_display_settings( $value ) {
+        $defaults = $this->plugin->get_display_settings_defaults();
+
+        $value = is_array( $value ) ? $value : array();
+        $out   = array(
+            'screen_width'      => isset( $value['screen_width'] ) ? (int) $value['screen_width'] : $defaults['screen_width'],
+            'screen_height'     => isset( $value['screen_height'] ) ? (int) $value['screen_height'] : $defaults['screen_height'],
+            'nav_background'    => isset( $value['nav_background'] ) ? sanitize_hex_color( $value['nav_background'] ) : $defaults['nav_background'],
+            'nav_icon'          => isset( $value['nav_icon'] ) ? sanitize_hex_color( $value['nav_icon'] ) : $defaults['nav_icon'],
+            'font_max'          => isset( $value['font_max'] ) ? (int) $value['font_max'] : $defaults['font_max'],
+            'font_min'          => isset( $value['font_min'] ) ? (int) $value['font_min'] : $defaults['font_min'],
+            'clock_font_family' => isset( $value['clock_font_family'] ) ? sanitize_text_field( $value['clock_font_family'] ) : $defaults['clock_font_family'],
+            'clock_font_size'   => isset( $value['clock_font_size'] ) ? (int) $value['clock_font_size'] : $defaults['clock_font_size'],
+        );
+
+        if ( empty( $out['nav_background'] ) ) {
+            $out['nav_background'] = $defaults['nav_background'];
+        }
+
+        if ( empty( $out['nav_icon'] ) ) {
+            $out['nav_icon'] = $defaults['nav_icon'];
+        }
+
+        if ( $out['font_min'] > $out['font_max'] ) {
+            $tmp             = $out['font_min'];
+            $out['font_min'] = $out['font_max'];
+            $out['font_max'] = $tmp;
+        }
+
+        $out['clock_font_family'] = $out['clock_font_family'] ? $out['clock_font_family'] : $defaults['clock_font_family'];
+
+        if ( $out['clock_font_size'] < 12 ) {
+            $out['clock_font_size'] = 12;
+        } elseif ( $out['clock_font_size'] > 96 ) {
+            $out['clock_font_size'] = 96;
+        }
+
+        return $out;
     }
 
     /**
@@ -222,9 +232,9 @@ class TH_Songbook_Admin {
             }
         }
 
-        $screen_id              = $screen->id;
-        $screen_post_type       = isset( $screen->post_type ) ? $screen->post_type : '';
-        $songbook_screen_ids    = array(
+        $screen_id           = $screen->id;
+        $screen_post_type    = isset( $screen->post_type ) ? $screen->post_type : '';
+        $songbook_screen_ids = array(
             'toplevel_page_th-songbook',
             'th-songbook_page_th-songbook-display-settings',
         );
@@ -285,4 +295,3 @@ class TH_Songbook_Admin {
         }
     }
 }
-
