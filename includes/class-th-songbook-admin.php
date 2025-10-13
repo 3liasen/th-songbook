@@ -145,10 +145,13 @@ class TH_Songbook_Admin {
      */
     public function render_display_settings_page() {
         $defaults = $this->plugin->get_display_settings_defaults();
-        $settings = wp_parse_args(
-            get_option( 'th_songbook_display', array() ),
-            $defaults
-        );
+        $settings = get_option( 'th_songbook_display', array() );
+
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+
+        $settings = array_merge( $defaults, $settings );
         ?>
         <div class="wrap th-songbook-adminlte">
             <div class="card">
