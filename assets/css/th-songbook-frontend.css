@@ -400,7 +400,7 @@
     padding-bottom: calc(clamp(0.5rem, 1.5vw, 1rem) + env(safe-area-inset-bottom, 0px));
     box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.08);
     z-index: 1000;
-    min-height: clamp(3.5rem, 4vw, 5rem);
+    min-height: var(--th-songbook-footer-min-height, clamp(3.5rem, 4vw, 5rem));
 }
 
 .th-songbook-detail__footer-inner {

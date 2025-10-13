@@ -118,6 +118,9 @@ class TH_Songbook_Admin {
             'clock_font_family' => isset( $value['clock_font_family'] ) ? sanitize_text_field( $value['clock_font_family'] ) : $defaults['clock_font_family'],
             'clock_font_size'   => isset( $value['clock_font_size'] ) ? (int) $value['clock_font_size'] : $defaults['clock_font_size'],
             'clock_font_weight' => isset( $value['clock_font_weight'] ) ? (int) $value['clock_font_weight'] : $defaults['clock_font_weight'],
+            'song_page_url'     => isset( $value['song_page_url'] ) ? esc_url_raw( $value['song_page_url'] ) : $defaults['song_page_url'],
+            'gigs_page_url'     => isset( $value['gigs_page_url'] ) ? esc_url_raw( $value['gigs_page_url'] ) : $defaults['gigs_page_url'],
+            'footer_min_height' => isset( $value['footer_min_height'] ) ? (int) $value['footer_min_height'] : $defaults['footer_min_height'],
         );
 
         if ( empty( $out['nav_background'] ) ) {
@@ -169,7 +172,7 @@ class TH_Songbook_Admin {
             <form method="post" action="options.php">
                 <?php settings_fields( 'th_songbook_display_group' ); ?>
                 <?php do_settings_sections( 'th_songbook_display_page' ); ?>
-                <table class="form-table" role="presentation">
+        <table class="form-table" role="presentation">
                     <tr>
                         <th scope="row"><label for="screen_width"><?php esc_html_e( 'Screen width', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[screen_width]" id="screen_width" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['screen_width'] ); ?>"></td>
@@ -205,6 +208,18 @@ class TH_Songbook_Admin {
                     <tr>
                         <th scope="row"><label for="clock_font_weight"><?php esc_html_e( 'Clock font weight', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[clock_font_weight]" id="clock_font_weight" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['clock_font_weight'] ); ?>" min="100" max="900" step="100"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="song_page_url"><?php esc_html_e( 'Single song page URL', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[song_page_url]" id="song_page_url" type="url" class="regular-text" value="<?php echo esc_attr( $settings['song_page_url'] ); ?>" placeholder="https://example.com/single-song/"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="gigs_page_url"><?php esc_html_e( 'Gigs page URL', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[gigs_page_url]" id="gigs_page_url" type="url" class="regular-text" value="<?php echo esc_attr( $settings['gigs_page_url'] ); ?>" placeholder="https://example.com/gigs/"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="footer_min_height"><?php esc_html_e( 'Footer min height (px)', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[footer_min_height]" id="footer_min_height" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['footer_min_height'] ); ?>" min="32" max="200" step="1"></td>
                     </tr>
                 </table>
                 <?php submit_button(); ?>

@@ -42,15 +42,19 @@ class TH_Songbook {
      * @var array<string, mixed>
      */
     private $display_settings_defaults = array(
-        'screen_width'   => 1200,
-        'screen_height'  => 1900,
-        'nav_background' => '#ffd319',
-        'nav_icon'       => '#000000',
-        'font_max'       => 34,
-        'font_min'       => 18,
-        'clock_font_family' => 'Courier New, Courier, monospace',
-        'clock_font_size'   => 32,
-        'clock_font_weight' => 600,
+        'screen_width'        => 1200,
+        'screen_height'       => 1900,
+        'nav_background'      => '#ffd319',
+        'nav_icon'            => '#000000',
+        'font_max'            => 34,
+        'font_min'            => 18,
+        'clock_font_family'   => 'Courier New, Courier, monospace',
+        'clock_font_size'     => 32,
+        'clock_font_weight'   => 600,
+        // New: URLs for dedicated pages and footer sizing.
+        'song_page_url'       => '',
+        'gigs_page_url'       => '',
+        'footer_min_height'   => 56,
     );
 
     /**

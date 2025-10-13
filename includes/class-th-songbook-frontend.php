@@ -48,6 +48,8 @@ class TH_Songbook_Frontend {
         add_action( 'wp_enqueue_scripts', array( $this, 'register_frontend_assets' ) );
         add_shortcode( 'th_songbook_gig_list', array( $this, 'render_gig_list_shortcode' ) );
         add_shortcode( 'th_songbook_gig_detail', array( $this, 'render_gig_detail_shortcode' ) );
+        // New: Single-song dedicated view.
+        add_shortcode( 'th_songbook_song_view', array( $this, 'render_song_view_shortcode' ) );
     }
 
     /**
@@ -199,6 +201,40 @@ class TH_Songbook_Frontend {
         <div class="th-songbook-gig-detail" data-songbook-gig-detail>
             <div class="th-songbook-gig-detail__inner" data-songbook-gig-detail-body aria-live="polite">
                 <p class="th-songbook-gig-detail__placeholder"><?php echo esc_html__( 'Select a gig to view the set list.', 'th-songbook' ); ?></p>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Shortcode callback for [th_songbook_song_view]. Renders only the song view area.
+     * This page is intended to be used on a dedicated "single-song" page.
+     *
+     * Accepts optional attributes or query args:
+     * - gig: Gig ID
+     * - song: Song pointer index within the gig order
+     *
+     * @param array<string,mixed> $atts Shortcode attributes.
+     * @return string
+     */
+    public function render_song_view_shortcode( $atts ) {
+        $atts = shortcode_atts(
+            array(
+                'gig'  => isset( $_GET['gig'] ) ? sanitize_text_field( wp_unslash( $_GET['gig'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                'song' => isset( $_GET['song'] ) ? (int) $_GET['song'] : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            ),
+            is_array( $atts ) ? $atts : array()
+        );
+
+        $data = $this->prepare_frontend_payload();
+        $this->enqueue_frontend_assets( $data );
+
+        ob_start();
+        ?>
+        <div class="th-songbook-gig-detail is-song-view" data-songbook-gig-detail>
+            <div class="th-songbook-gig-detail__inner" data-songbook-gig-detail-body aria-live="polite">
+                <p class="th-songbook-gig-detail__placeholder"><?php echo esc_html__( 'Loading song…', 'th-songbook' ); ?></p>
             </div>
         </div>
         <?php

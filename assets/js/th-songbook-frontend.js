@@ -10,8 +10,9 @@
 
     var listEl = document.querySelector('[data-songbook-gig-list]');
     var detailEl = document.querySelector('[data-songbook-gig-detail]');
+    var isSongOnlyMode = !listEl && !!detailEl;
 
-    if ( ! listEl || ! detailEl ) {
+    if ( ! detailEl ) {
         return;
     }
 
@@ -43,7 +44,7 @@
     });
 
 
-    listEl.addEventListener('click', function(event) {
+    if ( listEl ) { listEl.addEventListener('click', function(event) {
         var button = event.target.closest('[data-gig-trigger]');
         if ( ! button ) {
             return;
@@ -65,13 +66,23 @@
         if ( typeof detailEl.scrollIntoView === 'function' ) {
             detailEl.scrollIntoView( { behavior: 'smooth', block: 'start' } );
         }
-    });
+    }); }
 
     detailEl.addEventListener('click', function(event) {
         var songLink = event.target.closest('[data-songbook-song-link]');
         if ( songLink ) {
             var pointer = parseInt( songLink.getAttribute('data-songbook-song-link'), 10 );
             if ( ! Number.isNaN( pointer ) ) {
+                if ( displaySettings && displaySettings.song_page_url ) {
+                    var url = String( displaySettings.song_page_url );
+                    var gigId = state.gigId || ( detailEl.getAttribute('data-current-gig') || '' );
+                    if ( gigId ) {
+                        var joiner = url.indexOf('?') === -1 ? '?' : '&';
+                        window.location.href = url + joiner + 'gig=' + encodeURIComponent( gigId ) + '&song=' + encodeURIComponent( pointer );
+                        return;
+                    }
+                }
+
                 state.index = pointer;
                 renderDetail();
             }
@@ -87,6 +98,7 @@
     });
 
     function updateSelectedGig() {
+        if ( ! listEl ) { return; }
         var buttons = listEl.querySelectorAll('[data-gig-trigger]');
         Array.prototype.forEach.call( buttons, function( button ) {
             var isActive = button.getAttribute('data-gig-trigger') === state.gigId;
@@ -109,6 +121,10 @@
 
         switch ( action ) {
             case 'home':
+                if ( isSongOnlyMode && displaySettings && displaySettings.gigs_page_url ) {
+                    window.location.href = String( displaySettings.gigs_page_url );
+                    return;
+                }
                 state.index = null;
                 break;
             case 'prev':
@@ -723,5 +739,27 @@
         if ( displaySettings.clock_font_weight ) {
             root.style.setProperty( '--th-songbook-clock-font-weight', String( displaySettings.clock_font_weight ) );
         }
+        if ( displaySettings.footer_min_height ) {
+            root.style.setProperty( '--th-songbook-footer-min-height', parseInt( displaySettings.footer_min_height, 10 ) + 'px' );
+        }
+    }
+
+    // If we are on a single-song page, initialize from URL params.
+    if ( isSongOnlyMode ) {
+        try {
+            var params = new URLSearchParams( window.location.search );
+            var qGig = params.get('gig');
+            var qSong = params.get('song');
+            if ( qGig && gigItems[ qGig ] ) {
+                state.gigId = qGig;
+                if ( qSong !== null ) {
+                    var idx = parseInt( qSong, 10 );
+                    if ( ! Number.isNaN( idx ) ) {
+                        state.index = idx;
+                    }
+                }
+                renderDetail();
+            }
+        } catch (e) {}
     }
 })();
