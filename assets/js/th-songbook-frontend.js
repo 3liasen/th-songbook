@@ -7,6 +7,9 @@
     var displaySettings = data.settings || {};
     var root = document.documentElement;
     var layoutFrame = null;
+    var SWIPE_HORIZONTAL_THRESHOLD = 60;
+    var SWIPE_VERTICAL_TOLERANCE = 80;
+    var SWIPE_MAX_DURATION = 800;
 
     var listEl = document.querySelector('[data-songbook-gig-list]');
     var detailEl = document.querySelector('[data-songbook-gig-detail]');
@@ -31,6 +34,7 @@
 
     var layoutOverrideSettings = null;
     var clockTimer = null;
+    initSwipeNavigation();
 
     window.addEventListener('resize', function() {
         updateFooterOffset();
@@ -96,6 +100,170 @@
 
         handleAction( actionButton.getAttribute('data-songbook-action') );
     });
+
+    function initSwipeNavigation() {
+        if ( ! detailEl ) {
+            return;
+        }
+
+        detailEl.style.touchAction = 'pan-y';
+
+        if ( window.PointerEvent ) {
+            setupPointerSwipe();
+        } else {
+            setupTouchSwipe();
+        }
+
+        function setupPointerSwipe() {
+            var tracking = {
+                pointerId: null,
+                startX: 0,
+                startY: 0,
+                startTime: 0
+            };
+
+            detailEl.addEventListener( 'pointerdown', function( event ) {
+                if ( ! shouldStartSwipe( event ) ) {
+                    reset();
+                    return;
+                }
+
+                tracking.pointerId = event.pointerId;
+                tracking.startX = event.clientX;
+                tracking.startY = event.clientY;
+                tracking.startTime = Date.now();
+            } );
+
+            detailEl.addEventListener( 'pointerup', function( event ) {
+                if ( tracking.pointerId !== event.pointerId ) {
+                    return;
+                }
+
+                processSwipeAttempt( event.clientX - tracking.startX, event.clientY - tracking.startY, Date.now() - tracking.startTime );
+                reset();
+            } );
+
+            detailEl.addEventListener( 'pointercancel', function( event ) {
+                if ( tracking.pointerId === event.pointerId ) {
+                    reset();
+                }
+            } );
+
+            function reset() {
+                tracking.pointerId = null;
+                tracking.startX = 0;
+                tracking.startY = 0;
+                tracking.startTime = 0;
+            }
+        }
+
+        function setupTouchSwipe() {
+            var touchData = null;
+
+            detailEl.addEventListener( 'touchstart', function( event ) {
+                if ( event.touches.length !== 1 || shouldIgnoreSwipeTarget( event.target ) ) {
+                    touchData = null;
+                    return;
+                }
+
+                var touch = event.touches[ 0 ];
+                touchData = {
+                    startX: touch.clientX,
+                    startY: touch.clientY,
+                    startTime: Date.now()
+                };
+            }, { passive: true } );
+
+            detailEl.addEventListener( 'touchend', function( event ) {
+                if ( ! touchData ) {
+                    return;
+                }
+
+                var touch = event.changedTouches[ 0 ];
+                if ( ! touch ) {
+                    touchData = null;
+                    return;
+                }
+
+                var dx = touch.clientX - touchData.startX;
+                var dy = touch.clientY - touchData.startY;
+                var duration = Date.now() - touchData.startTime;
+
+                processSwipeAttempt( dx, dy, duration );
+                touchData = null;
+            } );
+
+            detailEl.addEventListener( 'touchcancel', function() {
+                touchData = null;
+            } );
+        }
+    }
+
+    function shouldStartSwipe( event ) {
+        if ( event.pointerType && event.pointerType !== 'touch' && event.pointerType !== 'pen' ) {
+            return false;
+        }
+
+        return ! shouldIgnoreSwipeTarget( event.target );
+    }
+
+    function shouldIgnoreSwipeTarget( target ) {
+        if ( ! target ) {
+            return false;
+        }
+
+        return !! target.closest( 'a, button, input, textarea, select, [data-songbook-action]' );
+    }
+
+    function processSwipeAttempt( dx, dy, duration ) {
+        if ( Math.abs( dx ) < SWIPE_HORIZONTAL_THRESHOLD ) {
+            return;
+        }
+
+        if ( Math.abs( dy ) > SWIPE_VERTICAL_TOLERANCE || Math.abs( dx ) <= Math.abs( dy ) * 1.5 ) {
+            return;
+        }
+
+        if ( duration > SWIPE_MAX_DURATION ) {
+            return;
+        }
+
+        var direction = dx < 0 ? 'next' : 'prev';
+
+        if ( ! canNavigateWithSwipe( direction ) ) {
+            return;
+        }
+
+        handleAction( direction );
+    }
+
+    function canNavigateWithSwipe( direction ) {
+        var gig = state.gigId ? gigItems[ state.gigId ] : null;
+
+        if ( ! gig ) {
+            return false;
+        }
+
+        var order = Array.isArray( gig.order ) ? gig.order : [];
+
+        if ( order.length === 0 ) {
+            return false;
+        }
+
+        if ( state.index === null ) {
+            return false;
+        }
+
+        if ( direction === 'next' ) {
+            return state.index < order.length - 1;
+        }
+
+        if ( direction === 'prev' ) {
+            return true;
+        }
+
+        return false;
+    }
 
     function updateSelectedGig() {
         if ( ! listEl ) { return; }
