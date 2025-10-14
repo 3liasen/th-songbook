@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Plugin Name: TH Songbook
  * Plugin URI: https://example.com/plugins/th-songbook
