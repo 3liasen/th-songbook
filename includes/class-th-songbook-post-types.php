@@ -38,6 +38,7 @@ class TH_Songbook_Post_Types {
         add_action( 'save_post_th_gig', array( $this, 'save_gig_meta' ), 10, 2 );
         add_filter( 'manage_th_song_posts_columns', array( $this, 'filter_song_admin_columns' ) );
         add_action( 'manage_th_song_posts_custom_column', array( $this, 'render_song_admin_column' ), 10, 2 );
+        add_action( 'pre_get_posts', array( $this, 'set_song_admin_default_order' ) );
     }
 
     /**
@@ -122,6 +123,36 @@ class TH_Songbook_Post_Types {
             'normal',
             'high'
         );
+    }
+
+    /**
+     * Ensure the Songs list defaults to title ASC ordering in wp-admin.
+     *
+     * @param WP_Query $query Current query instance.
+     */
+    public function set_song_admin_default_order( $query ) {
+        if ( ! is_admin() || ! $query instanceof WP_Query || ! $query->is_main_query() ) {
+            return;
+        }
+
+        $post_type = $query->get( 'post_type' );
+
+        if ( empty( $post_type ) ) {
+            return;
+        }
+
+        $is_song_list = ( is_array( $post_type ) && in_array( 'th_song', $post_type, true ) ) || 'th_song' === $post_type;
+
+        if ( ! $is_song_list ) {
+            return;
+        }
+
+        if ( $query->get( 'orderby' ) ) {
+            return;
+        }
+
+        $query->set( 'orderby', 'title' );
+        $query->set( 'order', 'ASC' );
     }
 
     /**
