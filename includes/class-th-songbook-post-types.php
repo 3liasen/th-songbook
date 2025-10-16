@@ -38,7 +38,10 @@ class TH_Songbook_Post_Types {
         add_action( 'save_post_th_gig', array( $this, 'save_gig_meta' ), 10, 2 );
         add_filter( 'manage_th_song_posts_columns', array( $this, 'filter_song_admin_columns' ) );
         add_action( 'manage_th_song_posts_custom_column', array( $this, 'render_song_admin_column' ), 10, 2 );
-        add_action( 'pre_get_posts', array( $this, 'set_song_admin_default_order' ) );
+        add_filter( 'manage_th_gig_posts_columns', array( $this, 'filter_gig_admin_columns' ) );
+        add_action( 'manage_th_gig_posts_custom_column', array( $this, 'render_gig_admin_column' ), 10, 2 );
+        add_filter( 'manage_edit-th_gig_sortable_columns', array( $this, 'make_gig_columns_sortable' ) );
+        add_action( 'pre_get_posts', array( $this, 'adjust_admin_list_queries' ) );
     }
 
     /**
@@ -130,7 +133,7 @@ class TH_Songbook_Post_Types {
      *
      * @param WP_Query $query Current query instance.
      */
-    public function set_song_admin_default_order( $query ) {
+    public function adjust_admin_list_queries( $query ) {
         if ( ! is_admin() || ! $query instanceof WP_Query || ! $query->is_main_query() ) {
             return;
         }
@@ -142,17 +145,32 @@ class TH_Songbook_Post_Types {
         }
 
         $is_song_list = ( is_array( $post_type ) && in_array( 'th_song', $post_type, true ) ) || 'th_song' === $post_type;
+        $is_gig_list  = ( is_array( $post_type ) && in_array( 'th_gig', $post_type, true ) ) || 'th_gig' === $post_type;
 
-        if ( ! $is_song_list ) {
+        if ( $is_song_list && ! $query->get( 'orderby' ) ) {
+            $query->set( 'orderby', 'title' );
+            $query->set( 'order', 'ASC' );
+        }
+
+        if ( ! $is_gig_list ) {
             return;
         }
 
-        if ( $query->get( 'orderby' ) ) {
+        $orderby = $query->get( 'orderby' );
+
+        if ( empty( $orderby ) ) {
+            $query->set( 'meta_key', 'th_gig_date' );
+            $query->set( 'meta_type', 'DATE' );
+            $query->set( 'orderby', 'meta_value' );
+            $query->set( 'order', 'DESC' );
             return;
         }
 
-        $query->set( 'orderby', 'title' );
-        $query->set( 'order', 'ASC' );
+        if ( 'th_gig_date' === $orderby ) {
+            $query->set( 'meta_key', 'th_gig_date' );
+            $query->set( 'meta_type', 'DATE' );
+            $query->set( 'orderby', 'meta_value' );
+        }
     }
 
     /**
@@ -256,6 +274,88 @@ class TH_Songbook_Post_Types {
         }
 
         return $updated;
+    }
+
+    /**
+     * Customize the Gig admin columns.
+     *
+     * @param array<string, string> $columns Registered columns.
+     *
+     * @return array<string, string>
+     */
+    public function filter_gig_admin_columns( $columns ) {
+        $updated = array();
+
+        if ( isset( $columns['cb'] ) ) {
+            $updated['cb'] = $columns['cb'];
+        }
+
+        if ( isset( $columns['title'] ) ) {
+            $updated['title'] = $columns['title'];
+        } else {
+            $updated['title'] = __( 'Title', 'th-songbook' );
+        }
+
+        $updated['th_gig_date']    = __( 'Date', 'th-songbook' );
+        $updated['th_gig_subject'] = __( 'Subject', 'th-songbook' );
+
+        foreach ( $columns as $key => $label ) {
+            if ( isset( $updated[ $key ] ) ) {
+                continue;
+            }
+
+            $updated[ $key ] = $label;
+        }
+
+        return $updated;
+    }
+
+    /**
+     * Render custom Gig column content.
+     *
+     * @param string $column  Column identifier.
+     * @param int    $post_id Post ID.
+     */
+    public function render_gig_admin_column( $column, $post_id ) {
+        switch ( $column ) {
+            case 'th_gig_date':
+                $raw = get_post_meta( $post_id, 'th_gig_date', true );
+                if ( empty( $raw ) ) {
+                    echo '&mdash;';
+                    break;
+                }
+
+                $timestamp = strtotime( $raw );
+                if ( false === $timestamp ) {
+                    echo esc_html( $raw );
+                    break;
+                }
+
+                echo esc_html( date_i18n( get_option( 'date_format' ), $timestamp ) );
+                break;
+            case 'th_gig_subject':
+                $subject = get_post_meta( $post_id, 'th_gig_subject', true );
+                if ( empty( $subject ) ) {
+                    echo '&mdash;';
+                    break;
+                }
+
+                echo esc_html( wp_trim_words( $subject, 18 ) );
+                break;
+        }
+    }
+
+    /**
+     * Register sortable Gig columns.
+     *
+     * @param array<string, string> $columns Sortable columns.
+     *
+     * @return array<string, string>
+     */
+    public function make_gig_columns_sortable( $columns ) {
+        $columns['th_gig_date'] = 'th_gig_date';
+
+        return $columns;
     }
 
     /**
