@@ -123,6 +123,11 @@ class TH_Songbook_Admin {
             'song_title_font_weight' => isset( $value['song_title_font_weight'] ) ? (int) $value['song_title_font_weight'] : $defaults['song_title_font_weight'],
             'song_title_font_family' => isset( $value['song_title_font_family'] ) ? sanitize_text_field( $value['song_title_font_family'] ) : $defaults['song_title_font_family'],
             'column_rule_color'      => isset( $value['column_rule_color'] ) ? sanitize_hex_color( $value['column_rule_color'] ) : $defaults['column_rule_color'],
+            'song_list_text_color'   => isset( $value['song_list_text_color'] ) ? sanitize_hex_color( $value['song_list_text_color'] ) : $defaults['song_list_text_color'],
+            'song_list_text_size'    => isset( $value['song_list_text_size'] ) ? (int) $value['song_list_text_size'] : $defaults['song_list_text_size'],
+            'song_list_text_weight'  => isset( $value['song_list_text_weight'] ) ? (int) $value['song_list_text_weight'] : $defaults['song_list_text_weight'],
+            'song_hover_color'       => isset( $value['song_hover_color'] ) ? sanitize_hex_color( $value['song_hover_color'] ) : $defaults['song_hover_color'],
+            'nav_hover_color'        => isset( $value['nav_hover_color'] ) ? sanitize_hex_color( $value['nav_hover_color'] ) : $defaults['nav_hover_color'],
             'song_page_url'     => isset( $value['song_page_url'] ) ? esc_url_raw( $value['song_page_url'] ) : $defaults['song_page_url'],
             'gigs_page_url'     => isset( $value['gigs_page_url'] ) ? esc_url_raw( $value['gigs_page_url'] ) : $defaults['gigs_page_url'],
             'footer_min_height' => isset( $value['footer_min_height'] ) ? (int) $value['footer_min_height'] : $defaults['footer_min_height'],
@@ -156,6 +161,30 @@ class TH_Songbook_Admin {
             $out['clock_font_weight'] = 900;
         }
 
+        if ( $out['song_list_text_size'] < 8 ) {
+            $out['song_list_text_size'] = $defaults['song_list_text_size'];
+        } elseif ( $out['song_list_text_size'] > 72 ) {
+            $out['song_list_text_size'] = 72;
+        }
+
+        if ( $out['song_list_text_weight'] < 100 ) {
+            $out['song_list_text_weight'] = 100;
+        } elseif ( $out['song_list_text_weight'] > 900 ) {
+            $out['song_list_text_weight'] = 900;
+        }
+
+        if ( empty( $out['song_list_text_color'] ) ) {
+            $out['song_list_text_color'] = $defaults['song_list_text_color'];
+        }
+
+        if ( empty( $out['song_hover_color'] ) ) {
+            $out['song_hover_color'] = $defaults['song_hover_color'];
+        }
+
+        if ( empty( $out['nav_hover_color'] ) ) {
+            $out['nav_hover_color'] = $defaults['nav_hover_color'];
+        }
+
         return $out;
     }
 
@@ -177,6 +206,7 @@ class TH_Songbook_Admin {
             <form method="post" action="options.php">
                 <?php settings_fields( 'th_songbook_display_group' ); ?>
                 <?php do_settings_sections( 'th_songbook_display_page' ); ?>
+                <h2><?php esc_html_e( 'Screen & Layout', 'th-songbook' ); ?></h2>
                 <table class="form-table" role="presentation">
                     <tr>
                         <th scope="row"><label for="screen_width"><?php esc_html_e( 'Screen width', 'th-songbook' ); ?></label></th>
@@ -187,14 +217,6 @@ class TH_Songbook_Admin {
                         <td><input name="th_songbook_display[screen_height]" id="screen_height" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['screen_height'] ); ?>"></td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="nav_background"><?php esc_html_e( 'Nav background', 'th-songbook' ); ?></label></th>
-                        <td><input name="th_songbook_display[nav_background]" id="nav_background" type="text" class="regular-text" value="<?php echo esc_attr( $settings['nav_background'] ); ?>" placeholder="#rrggbb"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="nav_icon"><?php esc_html_e( 'Nav icon', 'th-songbook' ); ?></label></th>
-                        <td><input name="th_songbook_display[nav_icon]" id="nav_icon" type="text" class="regular-text" value="<?php echo esc_attr( $settings['nav_icon'] ); ?>" placeholder="#rrggbb"></td>
-                    </tr>
-                    <tr>
                         <th scope="row"><label for="font_max"><?php esc_html_e( 'Max font size', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[font_max]" id="font_max" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['font_max'] ); ?>"></td>
                     </tr>
@@ -202,6 +224,33 @@ class TH_Songbook_Admin {
                         <th scope="row"><label for="font_min"><?php esc_html_e( 'Min font size', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[font_min]" id="font_min" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['font_min'] ); ?>"></td>
                     </tr>
+                    <tr>
+                        <th scope="row"><label for="footer_min_height"><?php esc_html_e( 'Footer min height (px)', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[footer_min_height]" id="footer_min_height" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['footer_min_height'] ); ?>" min="32" max="200" step="1"></td>
+                    </tr>
+                </table>
+
+                <h2><?php esc_html_e( 'Navigation & Buttons', 'th-songbook' ); ?></h2>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><label for="nav_background"><?php esc_html_e( 'Nav background', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[nav_background]" id="nav_background" type="text" class="regular-text" value="<?php echo esc_attr( $settings['nav_background'] ); ?>" placeholder="#ffd319"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="nav_icon"><?php esc_html_e( 'Nav icon color', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[nav_icon]" id="nav_icon" type="text" class="regular-text" value="<?php echo esc_attr( $settings['nav_icon'] ); ?>" placeholder="#000000"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="nav_hover_color"><?php esc_html_e( 'Button hover color', 'th-songbook' ); ?></label></th>
+                        <td>
+                            <input name="th_songbook_display[nav_hover_color]" id="nav_hover_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['nav_hover_color'] ); ?>" placeholder="#ffe268">
+                            <p class="description"><?php esc_html_e( 'Background and border color applied to the footer buttons on hover.', 'th-songbook' ); ?></p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h2><?php esc_html_e( 'Clock', 'th-songbook' ); ?></h2>
+                <table class="form-table" role="presentation">
                     <tr>
                         <th scope="row"><label for="clock_font_family"><?php esc_html_e( 'Clock font family', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[clock_font_family]" id="clock_font_family" type="text" class="regular-text" value="<?php echo esc_attr( $settings['clock_font_family'] ); ?>" placeholder="e.g. 'Roboto, sans-serif'"></td>
@@ -214,6 +263,10 @@ class TH_Songbook_Admin {
                         <th scope="row"><label for="clock_font_weight"><?php esc_html_e( 'Clock font weight', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[clock_font_weight]" id="clock_font_weight" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['clock_font_weight'] ); ?>" min="100" max="900" step="100"></td>
                     </tr>
+                </table>
+
+                <h2><?php esc_html_e( 'Song Titles & Columns', 'th-songbook' ); ?></h2>
+                <table class="form-table" role="presentation">
                     <tr>
                         <th scope="row"><label for="song_title_font_size"><?php esc_html_e( 'Song title font size (px)', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[song_title_font_size]" id="song_title_font_size" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['song_title_font_size'] ); ?>" min="10" max="96" step="1"></td>
@@ -234,6 +287,33 @@ class TH_Songbook_Admin {
                         <th scope="row"><label for="column_rule_color"><?php esc_html_e( 'Song columns divider color', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[column_rule_color]" id="column_rule_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['column_rule_color'] ); ?>" placeholder="#e0e0e0"></td>
                     </tr>
+                </table>
+
+                <h2><?php esc_html_e( 'Song List', 'th-songbook' ); ?></h2>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><label for="song_list_text_color"><?php esc_html_e( 'Song text color', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[song_list_text_color]" id="song_list_text_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['song_list_text_color'] ); ?>" placeholder="#1d2327"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="song_list_text_size"><?php esc_html_e( 'Song text size (px)', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[song_list_text_size]" id="song_list_text_size" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['song_list_text_size'] ); ?>" min="10" max="72" step="1"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="song_list_text_weight"><?php esc_html_e( 'Song text weight', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[song_list_text_weight]" id="song_list_text_weight" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['song_list_text_weight'] ); ?>" min="100" max="900" step="100"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="song_hover_color"><?php esc_html_e( 'Song hover color', 'th-songbook' ); ?></label></th>
+                        <td>
+                            <input name="th_songbook_display[song_hover_color]" id="song_hover_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['song_hover_color'] ); ?>" placeholder="#2271b1">
+                            <p class="description"><?php esc_html_e( 'Text and border color used when a song in the overview is hovered or focused.', 'th-songbook' ); ?></p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h2><?php esc_html_e( 'Links', 'th-songbook' ); ?></h2>
+                <table class="form-table" role="presentation">
                     <tr>
                         <th scope="row"><label for="song_page_url"><?php esc_html_e( 'Single song page URL', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[song_page_url]" id="song_page_url" type="url" class="regular-text" value="<?php echo esc_attr( $settings['song_page_url'] ); ?>" placeholder="https://example.com/single-song/"></td>
@@ -241,10 +321,6 @@ class TH_Songbook_Admin {
                     <tr>
                         <th scope="row"><label for="gigs_page_url"><?php esc_html_e( 'Gigs page URL', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[gigs_page_url]" id="gigs_page_url" type="url" class="regular-text" value="<?php echo esc_attr( $settings['gigs_page_url'] ); ?>" placeholder="https://example.com/gigs/"></td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="footer_min_height"><?php esc_html_e( 'Footer min height (px)', 'th-songbook' ); ?></label></th>
-                        <td><input name="th_songbook_display[footer_min_height]" id="footer_min_height" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['footer_min_height'] ); ?>" min="32" max="200" step="1"></td>
                     </tr>
                 </table>
                 <?php submit_button(); ?>

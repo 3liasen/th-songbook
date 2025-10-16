@@ -274,6 +274,7 @@ class TH_Songbook_Frontend {
                 'noSongs'         => __( 'No songs assigned yet.', 'th-songbook' ),
                 'noDuration'      => __( '--:--', 'th-songbook' ),
                 'setCountLabel'   => __( 'Sets', 'th-songbook' ),
+                'encoreLabel'     => __( 'Encore', 'th-songbook' ),
             ),
             'settings' => $this->plugin->get_display_settings(),
         );
@@ -318,8 +319,9 @@ class TH_Songbook_Frontend {
     private function format_gig_for_frontend( WP_Post $gig ) {
         $gig_id = $gig->ID;
 
-        $set_ids   = $this->post_types->get_gig_setlists( $gig_id );
-        $set_count = (int) get_post_meta( $gig_id, 'th_gig_set_count', true );
+        $set_ids     = $this->post_types->get_gig_setlists( $gig_id );
+        $encore_ids  = $this->post_types->get_gig_encores( $gig_id );
+        $set_count   = (int) get_post_meta( $gig_id, 'th_gig_set_count', true );
 
         $sets            = array();
         $order           = array();
@@ -342,21 +344,37 @@ class TH_Songbook_Frontend {
         foreach ( $ordered_keys as $set_key ) {
             $song_ids = isset( $set_ids[ $set_key ] ) ? (array) $set_ids[ $set_key ] : array();
             $songs    = array();
+            foreach ( $song_ids as $song_id ) {
+                $song               = $this->post_types->get_song_display_data( $song_id );
+                $song['isEncore']   = false;
+                $songs[]            = $song;
+            }
 
-            foreach ( $song_ids as $index => $song_id ) {
-                $song = $this->post_types->get_song_display_data( $song_id );
-                $songs[] = $song;
+            $encore_song = null;
+            if ( isset( $encore_ids[ $set_key ] ) ) {
+                $encore_id = (int) $encore_ids[ $set_key ];
+                if ( $encore_id > 0 ) {
+                    $encore_song = $this->post_types->get_song_display_data( $encore_id );
+                    $encore_song['isEncore'] = true;
+                    $songs[] = $encore_song;
+                }
+            }
 
+            $set_seconds = 0;
+            foreach ( $songs as $index => $song ) {
                 $seconds = TH_Songbook_Utils::parse_duration_to_seconds( $song['duration'] );
                 if ( null !== $seconds ) {
                     $combined_seconds += $seconds;
+                    $set_seconds      += $seconds;
                 }
 
                 $order[] = array(
-                    'setKey'  => $set_key,
-                    'index'   => $index,
-                    'songId'  => $song['id'],
-                    'missing' => ! empty( $song['missing'] ),
+                    'setKey'   => $set_key,
+                    'index'    => $index,
+                    'songId'   => $song['id'],
+                    'missing'  => ! empty( $song['missing'] ),
+                    'isEncore' => ! empty( $song['isEncore'] ),
+                    'type'     => ! empty( $song['isEncore'] ) ? 'encore' : 'song',
                 );
             }
 
@@ -365,10 +383,11 @@ class TH_Songbook_Frontend {
                 'key'           => $set_key,
                 'label'         => sprintf( __( '%d. Set', 'th-songbook' ), $index_for_label ),
                 'songs'         => $songs,
-                'totalDuration' => TH_Songbook_Utils::calculate_set_total_duration( $songs ),
+                'encore'        => $encore_song,
+                'totalDuration' => TH_Songbook_Utils::format_seconds_to_duration( $set_seconds ),
             );
 
-            $total_songs += count( $song_ids );
+            $total_songs += count( $songs );
         }
 
         $date_value = get_post_meta( $gig_id, 'th_gig_date', true );

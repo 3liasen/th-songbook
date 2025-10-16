@@ -113,7 +113,9 @@
         var sortableEnabled = false;
         var fieldName = $manager.data( 'field-name' ) || 'th_gig_songs[]';
         var noDurationPlaceholder = i18n.noDuration || '--:--';
-        var $totalTarget = $manager.closest( '.th-songbook-setlist' ).find( '[data-th-songbook-set-total]' );
+        var $setlistContainer = $manager.closest( '.th-songbook-setlist' );
+        var $totalTarget = $setlistContainer.find( '[data-th-songbook-set-total]' );
+        var $encoreSelect = $setlistContainer.find( '.th-songbook-encore-select' );
 
         if ( $searchInput.length ) {
             $searchInput.attr( 'placeholder', i18n.searchPlaceholder || $searchInput.attr( 'placeholder' ) || '' );
@@ -134,6 +136,19 @@
                     totalSeconds += seconds;
                 }
             } );
+
+            if ( $encoreSelect.length ) {
+                var encoreId = parseInt( $encoreSelect.val(), 10 );
+                if ( ! Number.isNaN( encoreId ) && encoreId > 0 ) {
+                    var encore = songIndex[ encoreId ];
+                    if ( encore && encore.duration ) {
+                        var encoreSeconds = parseDuration( encore.duration );
+                        if ( encoreSeconds !== null ) {
+                            totalSeconds += encoreSeconds;
+                        }
+                    }
+                }
+            }
 
             if ( $totalTarget.length ) {
                 $totalTarget.text( formatDuration( totalSeconds ) );
@@ -408,6 +423,12 @@
         ensureEmptyState();
         updateTotal();
         setupSortable();
+
+        if ( $encoreSelect.length ) {
+            $encoreSelect.on( 'change', function() {
+                updateTotal();
+            } );
+        }
     }
     function validateTimeField( field ) {
         var value = field.value.trim();

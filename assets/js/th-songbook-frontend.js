@@ -483,16 +483,31 @@
                 if ( Array.isArray( set.songs ) && set.songs.length ) {
                     html += '<ol class="th-songbook-detail__set-list">';
                     set.songs.forEach( function( song, songIndex ) {
-                        var pointer = getPointerIndex( gig, set.key, songIndex );
+                        var isEncore = !!song.isEncore;
+                        var pointer = getPointerIndex( gig, set.key, songIndex, isEncore ? 'encore' : 'song' );
                         var durationLabel = song.duration || strings.noDuration || '--:--';
-                        html += '<li class="th-songbook-detail__set-item">';
+                        var itemClass = 'th-songbook-detail__set-item';
+                        if ( isEncore ) {
+                            itemClass += ' is-encore';
+                        }
+                        html += '<li class="' + itemClass + '">';
 
                         if ( pointer >= 0 ) {
-                            html += '<button type="button" class="th-songbook-detail__set-link" data-songbook-song-link="' + pointer + '">';
+                            var linkClass = 'th-songbook-detail__set-link';
+                            if ( isEncore ) {
+                                linkClass += ' is-encore';
+                            }
+                            html += '<button type="button" class="' + linkClass + '" data-songbook-song-link="' + pointer + '">';
+                            if ( isEncore ) {
+                                html += '<span class="th-songbook-detail__set-song-flag">' + escapeHtml( strings.encoreLabel || 'Encore' ) + '</span>';
+                            }
                             html += '<span class="th-songbook-detail__set-song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</span>';
                             html += '<span class="th-songbook-detail__set-song-duration">' + escapeHtml( durationLabel ) + '</span>';
                             html += '</button>';
                         } else {
+                            if ( isEncore ) {
+                                html += '<span class="th-songbook-detail__set-song-flag">' + escapeHtml( strings.encoreLabel || 'Encore' ) + '</span>';
+                            }
                             html += '<span class="th-songbook-detail__set-song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</span>';
                             html += '<span class="th-songbook-detail__set-song-duration">' + escapeHtml( durationLabel ) + '</span>';
                         }
@@ -526,6 +541,7 @@
         }
 
         var song = pointer.song;
+        var isEncoreSong = !!( pointer.isEncore || ( song && song.isEncore ) );
         var html = '<section class="th-songbook-detail__section th-songbook-detail__section--song">';
 
         html += '<header class="th-songbook-detail__song-header">';
@@ -533,6 +549,9 @@
         html += '<h4 class="th-songbook-detail__song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</h4>';
         if ( song.key ) {
             html += '<span class="th-songbook-detail__song-key" aria-label="' + escapeHtml( ( strings.keyLabel || 'Key' ) + ': ' + song.key ) + '">' + escapeHtml( song.key ) + '</span>';
+        }
+        if ( isEncoreSong ) {
+            html += '<span class="th-songbook-detail__song-badge">' + escapeHtml( strings.encoreLabel || 'Encore' ) + '</span>';
         }
         html += '</div>';
         html += '</header>';
@@ -791,14 +810,22 @@
 
         return '<button ' + attrs + '>' + iconHtml + srText + '</button>';
     }
-    function getPointerIndex( gig, setKey, songIndex ) {
+    function getPointerIndex( gig, setKey, songIndex, type ) {
         if ( ! gig || ! Array.isArray( gig.order ) ) {
             return -1;
         }
 
+        var targetType = type || 'song';
+
         for ( var i = 0; i < gig.order.length; i += 1 ) {
             var pointer = gig.order[ i ];
-            if ( pointer && pointer.setKey === setKey && pointer.index === songIndex ) {
+            if ( ! pointer ) {
+                continue;
+            }
+
+            var pointerType = pointer.type || ( pointer.isEncore ? 'encore' : 'song' );
+
+            if ( pointer.setKey === setKey && pointer.index === songIndex && pointerType === targetType ) {
                 return i;
             }
         }
@@ -830,10 +857,14 @@
             return null;
         }
 
+        var pointerType = pointer.type || ( pointer.isEncore ? 'encore' : 'song' );
+
         return {
             song: song,
             setLabel: set.label,
-            position: pointer.index
+            position: pointer.index,
+            isEncore: pointerType === 'encore',
+            type: pointerType
         };
     }
 
@@ -964,6 +995,21 @@
         if ( displaySettings.song_title_font_family ) {
             root.style.setProperty( '--th-songbook-title-font-family', String( displaySettings.song_title_font_family ) );
             ensureGoogleFontLoaded( String( displaySettings.song_title_font_family ), displaySettings.song_title_font_weight );
+        }
+        if ( displaySettings.song_list_text_color ) {
+            root.style.setProperty( '--th-songbook-song-list-color', String( displaySettings.song_list_text_color ) );
+        }
+        if ( displaySettings.song_list_text_size ) {
+            root.style.setProperty( '--th-songbook-song-list-size', parseInt( displaySettings.song_list_text_size, 10 ) + 'px' );
+        }
+        if ( displaySettings.song_list_text_weight ) {
+            root.style.setProperty( '--th-songbook-song-list-weight', String( displaySettings.song_list_text_weight ) );
+        }
+        if ( displaySettings.song_hover_color ) {
+            root.style.setProperty( '--th-songbook-song-hover-color', String( displaySettings.song_hover_color ) );
+        }
+        if ( displaySettings.nav_hover_color ) {
+            root.style.setProperty( '--th-songbook-nav-hover-color', String( displaySettings.nav_hover_color ) );
         }
     }
 

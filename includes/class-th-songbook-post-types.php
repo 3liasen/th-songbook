@@ -220,18 +220,29 @@ class TH_Songbook_Post_Types {
             $set_count = 2;
         }
 
-        $stored_sets = get_post_meta( $post->ID, 'th_gig_sets', true );
-        $selected_set_ids = array();
+        $stored_sets        = get_post_meta( $post->ID, 'th_gig_sets', true );
+        $stored_encores     = get_post_meta( $post->ID, 'th_gig_encores', true );
+        $selected_set_ids   = array();
+        $selected_encores   = array();
 
         for ( $i = 1; $i <= $set_count; $i++ ) {
-            $key                    = 'set' . $i;
-            $selected_set_ids[ $key ] = array();
+            $key                       = 'set' . $i;
+            $selected_set_ids[ $key ]  = array();
+            $selected_encores[ $key ]  = 0;
         }
 
         if ( is_array( $stored_sets ) ) {
             foreach ( $selected_set_ids as $set_key => $unused ) {
                 if ( isset( $stored_sets[ $set_key ] ) ) {
                     $selected_set_ids[ $set_key ] = array_map( 'absint', (array) $stored_sets[ $set_key ] );
+                }
+            }
+        }
+
+        if ( is_array( $stored_encores ) ) {
+            foreach ( $selected_encores as $set_key => $unused ) {
+                if ( isset( $stored_encores[ $set_key ] ) ) {
+                    $selected_encores[ $set_key ] = (int) $stored_encores[ $set_key ];
                 }
             }
         }
@@ -262,6 +273,7 @@ class TH_Songbook_Post_Types {
         }
 
         $selected_sets = array();
+        $encore_details = array();
 
         foreach ( $selected_set_ids as $set_key => $song_ids ) {
             foreach ( $song_ids as $song_id ) {
@@ -283,9 +295,35 @@ class TH_Songbook_Post_Types {
             }
         }
 
+        foreach ( $selected_encores as $set_key => $encore_id ) {
+            $encore_id = (int) $encore_id;
+            if ( $encore_id < 1 ) {
+                continue;
+            }
+
+            if ( isset( $available_song_map[ $encore_id ] ) ) {
+                $encore_details[ $set_key ] = array(
+                    'id'       => $encore_id,
+                    'title'    => $available_song_map[ $encore_id ]['title'],
+                    'duration' => $available_song_map[ $encore_id ]['duration'],
+                    'missing'  => false,
+                );
+            } else {
+                $encore_details[ $set_key ] = array(
+                    'id'       => $encore_id,
+                    'title'    => sprintf( __( 'Song #%d (unavailable)', 'th-songbook' ), $encore_id ),
+                    'duration' => '',
+                    'missing'  => true,
+                );
+            }
+        }
+
         $set_totals = array();
         foreach ( $selected_set_ids as $set_key => $unused ) {
             $songs_in = isset( $selected_sets[ $set_key ] ) ? $selected_sets[ $set_key ] : array();
+            if ( isset( $encore_details[ $set_key ] ) ) {
+                $songs_in[] = $encore_details[ $set_key ];
+            }
             $set_totals[ $set_key ] = TH_Songbook_Utils::calculate_set_total_duration( $songs_in );
         }
 
@@ -369,16 +407,37 @@ class TH_Songbook_Post_Types {
                                             <button type="button" class="button-link th-songbook-remove-song"><?php esc_html_e( 'Remove', 'th-songbook' ); ?></button>
                                             <input type="hidden" name="<?php echo esc_attr( $config['field'] ); ?>" value="<?php echo esc_attr( $song['id'] ); ?>" />
                                         </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                                <?php if ( empty( $songs_in_set ) ) : ?>
-                                    <p class="description th-songbook-song-list__empty"><?php esc_html_e( 'No songs assigned yet.', 'th-songbook' ); ?></p>
-                                <?php endif; ?>
-                            </div>
-                            <p class="th-songbook-set-total">
-                                <span class="th-songbook-set-total__label"><?php esc_html_e( 'Total time:', 'th-songbook' ); ?></span>
-                                <span class="th-songbook-set-total__value" data-th-songbook-set-total="<?php echo esc_attr( $set_key ); ?>"><?php echo esc_html( $set_totals[ $set_key ] ); ?></span>
-                            </p>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php if ( empty( $songs_in_set ) ) : ?>
+                        <p class="description th-songbook-song-list__empty"><?php esc_html_e( 'No songs assigned yet.', 'th-songbook' ); ?></p>
+                    <?php endif; ?>
+                    <div class="th-songbook-encore">
+                        <label for="th-songbook-encore-<?php echo esc_attr( $set_key . '-' . $post->ID ); ?>"><?php esc_html_e( 'Encore song', 'th-songbook' ); ?></label>
+                        <select class="th-songbook-encore-select" id="th-songbook-encore-<?php echo esc_attr( $set_key . '-' . $post->ID ); ?>" name="th_gig_<?php echo esc_attr( $set_key ); ?>_encore">
+                            <option value="0"><?php esc_html_e( 'No encore', 'th-songbook' ); ?></option>
+                            <?php foreach ( $available_song_choices as $choice ) : ?>
+                                <?php
+                                $value       = (int) $choice['id'];
+                                $is_selected = isset( $selected_encores[ $set_key ] ) && (int) $selected_encores[ $set_key ] === $value;
+                                $label       = $choice['title'];
+                                if ( ! empty( $choice['duration'] ) ) {
+                                    $label .= ' (' . $choice['duration'] . ')';
+                                }
+                                ?>
+                                <option value="<?php echo esc_attr( $value ); ?>"<?php selected( $is_selected ); ?>><?php echo esc_html( $label ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="description"><?php esc_html_e( 'Optional extra number played after this set.', 'th-songbook' ); ?></p>
+                        <?php if ( isset( $encore_details[ $set_key ] ) && ! empty( $encore_details[ $set_key ]['missing'] ) ) : ?>
+                            <p class="description th-songbook-encore__warning"><?php esc_html_e( 'Selected encore song is no longer available.', 'th-songbook' ); ?></p>
+                        <?php endif; ?>
+                    </div>
+                    </div>
+                    <p class="th-songbook-set-total">
+                        <span class="th-songbook-set-total__label"><?php esc_html_e( 'Total time:', 'th-songbook' ); ?></span>
+                        <span class="th-songbook-set-total__value" data-th-songbook-set-total="<?php echo esc_attr( $set_key ); ?>"><?php echo esc_html( $set_totals[ $set_key ] ); ?></span>
+                    </p>
                         </section>
                     <?php endforeach; ?>
                 </div>
@@ -511,6 +570,8 @@ class TH_Songbook_Post_Types {
             }
         }
 
+        $encores_payload = array();
+
         for ( $i = 1; $i <= $effective_set_count; $i++ ) {
             $field = 'th_gig_set' . $i . '_songs';
             $ids   = array();
@@ -520,12 +581,26 @@ class TH_Songbook_Post_Types {
             $ids = array_values( array_unique( array_filter( $ids ) ) );
             $sets_payload[ 'set' . $i ] = $ids;
             $combined = array_merge( $combined, $ids );
+
+            $encore_field = 'th_gig_set' . $i . '_encore';
+            if ( isset( $_POST[ $encore_field ] ) ) {
+                $encore_id = absint( wp_unslash( $_POST[ $encore_field ] ) );
+                if ( $encore_id > 0 ) {
+                    $encores_payload[ 'set' . $i ] = $encore_id;
+                }
+            }
         }
 
         if ( empty( $sets_payload ) ) {
             delete_post_meta( $post_id, 'th_gig_sets' );
         } else {
             update_post_meta( $post_id, 'th_gig_sets', $sets_payload );
+        }
+
+        if ( empty( $encores_payload ) ) {
+            delete_post_meta( $post_id, 'th_gig_encores' );
+        } else {
+            update_post_meta( $post_id, 'th_gig_encores', $encores_payload );
         }
 
         if ( ! empty( $combined ) ) {
@@ -602,6 +677,29 @@ class TH_Songbook_Post_Types {
         }
 
         return $sets;
+    }
+
+    /**
+     * Retrieve encore song IDs keyed by set.
+     *
+     * @param int $gig_id Gig post ID.
+     *
+     * @return array<string, int>
+     */
+    public function get_gig_encores( $gig_id ) {
+        $stored_encores = get_post_meta( $gig_id, 'th_gig_encores', true );
+        $encores        = array();
+
+        if ( is_array( $stored_encores ) ) {
+            foreach ( $stored_encores as $key => $value ) {
+                $encore_id = absint( $value );
+                if ( $encore_id > 0 ) {
+                    $encores[ $key ] = $encore_id;
+                }
+            }
+        }
+
+        return $encores;
     }
 
     /**

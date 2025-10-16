@@ -120,6 +120,25 @@
 .th-songbook-song-manager .th-songbook-remove-song {
     white-space: nowrap;
 }
+
+.th-songbook-encore {
+    margin-top: 0.5rem;
+}
+
+.th-songbook-encore label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.th-songbook-encore select {
+    width: 100%;
+    max-width: 100%;
+}
+
+.th-songbook-encore__warning {
+    color: #b32d2e;
+}
 .th-songbook-song-list__handle {
     cursor: grab;
     margin-right: 12px;

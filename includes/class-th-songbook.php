@@ -57,6 +57,11 @@ class TH_Songbook {
         'song_title_font_weight'=> 700,
         'song_title_font_family'=> '',
         'column_rule_color'     => '#e0e0e0',
+        'song_list_text_color'  => '#1d2327',
+        'song_list_text_size'   => 16,
+        'song_list_text_weight' => 500,
+        'song_hover_color'      => '#2271b1',
+        'nav_hover_color'       => '#ffe268',
         // New: URLs for dedicated pages and footer sizing.
         'song_page_url'       => '',
         'gigs_page_url'       => '',
