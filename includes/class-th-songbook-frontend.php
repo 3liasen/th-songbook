@@ -456,7 +456,7 @@ class TH_Songbook_Frontend {
 
         return array(
             'id'               => (int) $gig_id,
-            'title'            => get_the_title( $gig_id ),
+            'title'            => wp_specialchars_decode( get_the_title( $gig_id ), ENT_QUOTES ),
             'date'             => $date_value,
             'dateDisplay'      => $datetime['date'],
             'timeDisplay'      => $datetime['time'],
