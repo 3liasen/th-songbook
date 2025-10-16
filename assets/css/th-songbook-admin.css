@@ -134,6 +134,7 @@
 .th-songbook-encore select {
     width: 100%;
     max-width: 100%;
+    min-height: 140px;
 }
 
 .th-songbook-encore__warning {

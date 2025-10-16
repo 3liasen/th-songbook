@@ -542,12 +542,13 @@
 
         html += '<header class="th-songbook-detail__song-header">';
         html += '<div class="th-songbook-detail__song-title-row">';
-        html += '<h4 class="th-songbook-detail__song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</h4>';
+        var titleHtml = escapeHtml( song.title || strings.missingSong || '' );
+        if ( isEncoreSong ) {
+            titleHtml += ' <span class="th-songbook-detail__song-badge">' + escapeHtml( strings.encoreLabel || 'EKSTRA' ) + '</span>';
+        }
+        html += '<h4 class="th-songbook-detail__song-title">' + titleHtml + '</h4>';
         if ( song.key ) {
             html += '<span class="th-songbook-detail__song-key" aria-label="' + escapeHtml( ( strings.keyLabel || 'Key' ) + ': ' + song.key ) + '">' + escapeHtml( song.key ) + '</span>';
-        }
-        if ( isEncoreSong ) {
-            html += '<span class="th-songbook-detail__song-badge">' + escapeHtml( strings.encoreLabel || 'EKSTRA' ) + '</span>';
         }
         html += '</div>';
         html += '</header>';

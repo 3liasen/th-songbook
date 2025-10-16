@@ -297,7 +297,7 @@ class TH_Songbook_Post_Types {
         for ( $i = 1; $i <= $set_count; $i++ ) {
             $key                       = 'set' . $i;
             $selected_set_ids[ $key ]  = array();
-            $selected_encores[ $key ]  = 0;
+            $selected_encores[ $key ]  = array();
         }
 
         if ( is_array( $stored_sets ) ) {
@@ -311,7 +311,14 @@ class TH_Songbook_Post_Types {
         if ( is_array( $stored_encores ) ) {
             foreach ( $selected_encores as $set_key => $unused ) {
                 if ( isset( $stored_encores[ $set_key ] ) ) {
-                    $selected_encores[ $set_key ] = (int) $stored_encores[ $set_key ];
+                    $raw_values = (array) $stored_encores[ $set_key ];
+                    $selected_encores[ $set_key ] = array_values(
+                        array_unique(
+                            array_filter(
+                                array_map( 'absint', $raw_values )
+                            )
+                        )
+                    );
                 }
             }
         }
@@ -341,7 +348,7 @@ class TH_Songbook_Post_Types {
             $available_song_map[ $song_choice['id'] ] = $song_choice;
         }
 
-        $selected_sets = array();
+        $selected_sets  = array();
         $encore_details = array();
 
         foreach ( $selected_set_ids as $set_key => $song_ids ) {
@@ -364,34 +371,37 @@ class TH_Songbook_Post_Types {
             }
         }
 
-        foreach ( $selected_encores as $set_key => $encore_id ) {
-            $encore_id = (int) $encore_id;
-            if ( $encore_id < 1 ) {
-                continue;
-            }
+        foreach ( $selected_encores as $set_key => $encore_ids ) {
+            $encore_details[ $set_key ] = array();
+            foreach ( (array) $encore_ids as $encore_id ) {
+                $encore_id = (int) $encore_id;
+                if ( $encore_id < 1 ) {
+                    continue;
+                }
 
-            if ( isset( $available_song_map[ $encore_id ] ) ) {
-                $encore_details[ $set_key ] = array(
-                    'id'       => $encore_id,
-                    'title'    => $available_song_map[ $encore_id ]['title'],
-                    'duration' => $available_song_map[ $encore_id ]['duration'],
-                    'missing'  => false,
-                );
-            } else {
-                $encore_details[ $set_key ] = array(
-                    'id'       => $encore_id,
-                    'title'    => sprintf( __( 'Song #%d (unavailable)', 'th-songbook' ), $encore_id ),
-                    'duration' => '',
-                    'missing'  => true,
-                );
+                if ( isset( $available_song_map[ $encore_id ] ) ) {
+                    $encore_details[ $set_key ][] = array(
+                        'id'       => $encore_id,
+                        'title'    => $available_song_map[ $encore_id ]['title'],
+                        'duration' => $available_song_map[ $encore_id ]['duration'],
+                        'missing'  => false,
+                    );
+                } else {
+                    $encore_details[ $set_key ][] = array(
+                        'id'       => $encore_id,
+                        'title'    => sprintf( __( 'Song #%d (unavailable)', 'th-songbook' ), $encore_id ),
+                        'duration' => '',
+                        'missing'  => true,
+                    );
+                }
             }
         }
 
         $set_totals = array();
         foreach ( $selected_set_ids as $set_key => $unused ) {
             $songs_in = isset( $selected_sets[ $set_key ] ) ? $selected_sets[ $set_key ] : array();
-            if ( isset( $encore_details[ $set_key ] ) ) {
-                $songs_in[] = $encore_details[ $set_key ];
+            if ( isset( $encore_details[ $set_key ] ) && ! empty( $encore_details[ $set_key ] ) ) {
+                $songs_in = array_merge( $songs_in, $encore_details[ $set_key ] );
             }
             $set_totals[ $set_key ] = TH_Songbook_Utils::calculate_set_total_duration( $songs_in );
         }
@@ -483,12 +493,12 @@ class TH_Songbook_Post_Types {
                     <?php endif; ?>
                     <div class="th-songbook-encore">
                         <label for="th-songbook-encore-<?php echo esc_attr( $set_key . '-' . $post->ID ); ?>"><?php esc_html_e( 'EKSTRA', 'th-songbook' ); ?></label>
-                        <select class="th-songbook-encore-select" id="th-songbook-encore-<?php echo esc_attr( $set_key . '-' . $post->ID ); ?>" name="th_gig_<?php echo esc_attr( $set_key ); ?>_encore">
-                            <option value="0"><?php esc_html_e( 'No EKSTRA', 'th-songbook' ); ?></option>
+                        <select class="th-songbook-encore-select" id="th-songbook-encore-<?php echo esc_attr( $set_key . '-' . $post->ID ); ?>" name="th_gig_<?php echo esc_attr( $set_key ); ?>_encore[]" multiple="multiple" size="6">
                             <?php foreach ( $available_song_choices as $choice ) : ?>
                                 <?php
                                 $value       = (int) $choice['id'];
-                                $is_selected = isset( $selected_encores[ $set_key ] ) && (int) $selected_encores[ $set_key ] === $value;
+                                $selected_ids = isset( $selected_encores[ $set_key ] ) ? (array) $selected_encores[ $set_key ] : array();
+                                $is_selected = in_array( $value, $selected_ids, true );
                                 $label       = $choice['title'];
                                 if ( ! empty( $choice['duration'] ) ) {
                                     $label .= ' (' . $choice['duration'] . ')';
@@ -497,9 +507,20 @@ class TH_Songbook_Post_Types {
                                 <option value="<?php echo esc_attr( $value ); ?>"<?php selected( $is_selected ); ?>><?php echo esc_html( $label ); ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <p class="description"><?php esc_html_e( 'Optional EKSTRA number played after this set.', 'th-songbook' ); ?></p>
-                        <?php if ( isset( $encore_details[ $set_key ] ) && ! empty( $encore_details[ $set_key ]['missing'] ) ) : ?>
-                            <p class="description th-songbook-encore__warning"><?php esc_html_e( 'Selected EKSTRA is no longer available.', 'th-songbook' ); ?></p>
+                        <p class="description"><?php esc_html_e( 'Optional EKSTRA numbers played after this set. Hold Ctrl (Cmd on Mac) to select multiple songs.', 'th-songbook' ); ?></p>
+                        <?php
+                        $has_missing_encore = false;
+                        if ( isset( $encore_details[ $set_key ] ) ) {
+                            foreach ( $encore_details[ $set_key ] as $encore_song ) {
+                                if ( ! empty( $encore_song['missing'] ) ) {
+                                    $has_missing_encore = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if ( $has_missing_encore ) :
+                            ?>
+                            <p class="description th-songbook-encore__warning"><?php esc_html_e( 'One or more selected EKSTRA songs are no longer available.', 'th-songbook' ); ?></p>
                         <?php endif; ?>
                     </div>
                     </div>
@@ -652,11 +673,15 @@ class TH_Songbook_Post_Types {
             $combined = array_merge( $combined, $ids );
 
             $encore_field = 'th_gig_set' . $i . '_encore';
+            $encore_ids   = array();
             if ( isset( $_POST[ $encore_field ] ) ) {
-                $encore_id = absint( wp_unslash( $_POST[ $encore_field ] ) );
-                if ( $encore_id > 0 ) {
-                    $encores_payload[ 'set' . $i ] = $encore_id;
-                }
+                $encore_ids = array_map( 'absint', (array) wp_unslash( $_POST[ $encore_field ] ) );
+                $encore_ids = array_values( array_unique( array_filter( $encore_ids ) ) );
+            }
+
+            if ( ! empty( $encore_ids ) ) {
+                $encores_payload[ 'set' . $i ] = $encore_ids;
+                $combined = array_merge( $combined, $encore_ids );
             }
         }
 
@@ -785,10 +810,12 @@ class TH_Songbook_Post_Types {
 
             $encores = $this->get_gig_encores( $gig_id );
             if ( is_array( $encores ) ) {
-                foreach ( $encores as $encore_id ) {
-                    $encore_id = (int) $encore_id;
-                    if ( $encore_id > 0 ) {
-                        $song_ids[] = $encore_id;
+                foreach ( $encores as $encore_list ) {
+                    foreach ( (array) $encore_list as $encore_id ) {
+                        $encore_id = (int) $encore_id;
+                        if ( $encore_id > 0 ) {
+                            $song_ids[] = $encore_id;
+                        }
                     }
                 }
             }
@@ -856,7 +883,7 @@ class TH_Songbook_Post_Types {
      *
      * @param int $gig_id Gig post ID.
      *
-     * @return array<string, int>
+     * @return array<string, array<int>>
      */
     public function get_gig_encores( $gig_id ) {
         $stored_encores = get_post_meta( $gig_id, 'th_gig_encores', true );
@@ -864,9 +891,17 @@ class TH_Songbook_Post_Types {
 
         if ( is_array( $stored_encores ) ) {
             foreach ( $stored_encores as $key => $value ) {
-                $encore_id = absint( $value );
-                if ( $encore_id > 0 ) {
-                    $encores[ $key ] = $encore_id;
+                $raw = (array) $value;
+                $ids = array_values(
+                    array_unique(
+                        array_filter(
+                            array_map( 'absint', $raw )
+                        )
+                    )
+                );
+
+                if ( ! empty( $ids ) ) {
+                    $encores[ $key ] = $ids;
                 }
             }
         }

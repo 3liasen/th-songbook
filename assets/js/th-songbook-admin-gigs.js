@@ -138,15 +138,26 @@
             } );
 
             if ( $encoreSelect.length ) {
-                var encoreId = parseInt( $encoreSelect.val(), 10 );
-                if ( ! Number.isNaN( encoreId ) && encoreId > 0 ) {
-                    var encore = songIndex[ encoreId ];
-                    if ( encore && encore.duration ) {
-                        var encoreSeconds = parseDuration( encore.duration );
-                        if ( encoreSeconds !== null ) {
-                            totalSeconds += encoreSeconds;
+                var selectedEncores = $encoreSelect.val();
+                if ( selectedEncores ) {
+                    var values = Array.isArray( selectedEncores ) ? selectedEncores : [ selectedEncores ];
+                    var seen = {};
+                    values.forEach( function( value ) {
+                        var encoreId = parseInt( value, 10 );
+                        if ( Number.isNaN( encoreId ) || encoreId <= 0 || seen[ encoreId ] ) {
+                            return;
                         }
-                    }
+
+                        seen[ encoreId ] = true;
+
+                        var encore = songIndex[ encoreId ];
+                        if ( encore && encore.duration ) {
+                            var encoreSeconds = parseDuration( encore.duration );
+                            if ( encoreSeconds !== null ) {
+                                totalSeconds += encoreSeconds;
+                            }
+                        }
+                    } );
                 }
             }
 

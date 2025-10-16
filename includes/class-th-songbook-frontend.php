@@ -351,24 +351,13 @@ class TH_Songbook_Frontend {
         foreach ( $ordered_keys as $set_key ) {
             $song_ids = isset( $set_ids[ $set_key ] ) ? (array) $set_ids[ $set_key ] : array();
             $songs    = array();
-            foreach ( $song_ids as $song_id ) {
-                $song               = $this->post_types->get_song_display_data( $song_id );
-                $song['isEncore']   = false;
-                $songs[]            = $song;
-            }
-
-            $encore_song = null;
-            if ( isset( $encore_ids[ $set_key ] ) ) {
-                $encore_id = (int) $encore_ids[ $set_key ];
-                if ( $encore_id > 0 ) {
-                    $encore_song = $this->post_types->get_song_display_data( $encore_id );
-                    $encore_song['isEncore'] = true;
-                    $songs[] = $encore_song;
-                }
-            }
-
             $set_seconds = 0;
-            foreach ( $songs as $index => $song ) {
+
+            foreach ( $song_ids as $song_id ) {
+                $song             = $this->post_types->get_song_display_data( $song_id );
+                $song['isEncore'] = false;
+                $songs[]          = $song;
+
                 $seconds = TH_Songbook_Utils::parse_duration_to_seconds( $song['duration'] );
                 if ( null !== $seconds ) {
                     $combined_seconds += $seconds;
@@ -377,12 +366,42 @@ class TH_Songbook_Frontend {
 
                 $order[] = array(
                     'setKey'   => $set_key,
-                    'index'    => $index,
+                    'index'    => count( $songs ) - 1,
                     'songId'   => $song['id'],
                     'missing'  => ! empty( $song['missing'] ),
-                    'isEncore' => ! empty( $song['isEncore'] ),
-                    'type'     => ! empty( $song['isEncore'] ) ? 'encore' : 'song',
+                    'isEncore' => false,
+                    'type'     => 'song',
                 );
+            }
+
+            $encore_songs = array();
+            if ( isset( $encore_ids[ $set_key ] ) ) {
+                foreach ( (array) $encore_ids[ $set_key ] as $encore_id ) {
+                    $encore_id = (int) $encore_id;
+                    if ( $encore_id < 1 ) {
+                        continue;
+                    }
+
+                    $encore_song             = $this->post_types->get_song_display_data( $encore_id );
+                    $encore_song['isEncore'] = true;
+                    $songs[]                 = $encore_song;
+                    $encore_songs[]          = $encore_song;
+
+                    $seconds = TH_Songbook_Utils::parse_duration_to_seconds( $encore_song['duration'] );
+                    if ( null !== $seconds ) {
+                        $combined_seconds += $seconds;
+                        $set_seconds      += $seconds;
+                    }
+
+                    $order[] = array(
+                        'setKey'   => $set_key,
+                        'index'    => count( $songs ) - 1,
+                        'songId'   => $encore_song['id'],
+                        'missing'  => ! empty( $encore_song['missing'] ),
+                        'isEncore' => true,
+                        'type'     => 'encore',
+                    );
+                }
             }
 
             $index_for_label++;
@@ -390,7 +409,8 @@ class TH_Songbook_Frontend {
                 'key'           => $set_key,
                 'label'         => sprintf( __( '%d. Set', 'th-songbook' ), $index_for_label ),
                 'songs'         => $songs,
-                'encore'        => $encore_song,
+                'encore'        => $encore_songs,
+                'encores'       => $encore_songs,
                 'totalDuration' => TH_Songbook_Utils::format_seconds_to_duration( $set_seconds ),
             );
 
