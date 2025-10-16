@@ -423,13 +423,16 @@ class TH_Songbook_Post_Types {
 
         $stored_sets        = get_post_meta( $post->ID, 'th_gig_sets', true );
         $stored_encores     = get_post_meta( $post->ID, 'th_gig_encores', true );
+        $stored_safes       = get_post_meta( $post->ID, 'th_gig_safes', true );
         $selected_set_ids   = array();
         $selected_encores   = array();
+        $selected_safes     = array();
 
         for ( $i = 1; $i <= $set_count; $i++ ) {
             $key                       = 'set' . $i;
             $selected_set_ids[ $key ]  = array();
             $selected_encores[ $key ]  = array();
+            $selected_safes[ $key ]    = array();
         }
 
         if ( is_array( $stored_sets ) ) {
@@ -445,6 +448,21 @@ class TH_Songbook_Post_Types {
                 if ( isset( $stored_encores[ $set_key ] ) ) {
                     $raw_values = (array) $stored_encores[ $set_key ];
                     $selected_encores[ $set_key ] = array_values(
+                        array_unique(
+                            array_filter(
+                                array_map( 'absint', $raw_values )
+                            )
+                        )
+                    );
+                }
+            }
+        }
+
+        if ( is_array( $stored_safes ) ) {
+            foreach ( $selected_safes as $set_key => $unused ) {
+                if ( isset( $stored_safes[ $set_key ] ) ) {
+                    $raw_values = (array) $stored_safes[ $set_key ];
+                    $selected_safes[ $set_key ] = array_values(
                         array_unique(
                             array_filter(
                                 array_map( 'absint', $raw_values )
@@ -481,6 +499,7 @@ class TH_Songbook_Post_Types {
         }
 
         $selected_sets      = array();
+        $safe_details       = array();
         $encore_details     = array();
         $in_between_seconds = TH_Songbook_Utils::parse_duration_to_seconds( $in_between );
 
@@ -497,6 +516,32 @@ class TH_Songbook_Post_Types {
                     $selected_sets[ $set_key ][] = array(
                         'id'       => $song_id,
                         'title'    => sprintf( __( 'Song #%d (unavailable)', 'th-songbook' ), $song_id ),
+                        'duration' => '',
+                        'missing'  => true,
+                    );
+                }
+            }
+        }
+
+        foreach ( $selected_safes as $set_key => $safe_ids ) {
+            $safe_details[ $set_key ] = array();
+            foreach ( (array) $safe_ids as $safe_id ) {
+                $safe_id = (int) $safe_id;
+                if ( $safe_id < 1 ) {
+                    continue;
+                }
+
+                if ( isset( $available_song_map[ $safe_id ] ) ) {
+                    $safe_details[ $set_key ][] = array(
+                        'id'       => $safe_id,
+                        'title'    => $available_song_map[ $safe_id ]['title'],
+                        'duration' => $available_song_map[ $safe_id ]['duration'],
+                        'missing'  => false,
+                    );
+                } else {
+                    $safe_details[ $set_key ][] = array(
+                        'id'       => $safe_id,
+                        'title'    => sprintf( __( 'Song #%d (unavailable)', 'th-songbook' ), $safe_id ),
                         'duration' => '',
                         'missing'  => true,
                     );
@@ -533,6 +578,9 @@ class TH_Songbook_Post_Types {
         $set_totals = array();
         foreach ( $selected_set_ids as $set_key => $unused ) {
             $songs_in = isset( $selected_sets[ $set_key ] ) ? $selected_sets[ $set_key ] : array();
+            if ( isset( $safe_details[ $set_key ] ) && ! empty( $safe_details[ $set_key ] ) ) {
+                $songs_in = array_merge( $songs_in, $safe_details[ $set_key ] );
+            }
             if ( isset( $encore_details[ $set_key ] ) && ! empty( $encore_details[ $set_key ] ) ) {
                 $songs_in = array_merge( $songs_in, $encore_details[ $set_key ] );
             }
@@ -629,6 +677,55 @@ class TH_Songbook_Post_Types {
                                 </ul>
                                 <?php if ( empty( $songs_in_set ) ) : ?>
                                     <p class="description th-songbook-song-list__empty"><?php esc_html_e( 'No songs assigned yet.', 'th-songbook' ); ?></p>
+                                <?php endif; ?>
+                            </div>
+                            <?php
+                            $safe_songs    = isset( $safe_details[ $set_key ] ) ? $safe_details[ $set_key ] : array();
+                            $safe_field    = 'th_gig_' . $set_key . '_safe[]';
+                            $safe_input_id = 'th-songbook-safe-search-' . $set_key . '-' . $post->ID;
+                            ?>
+                            <div class="th-songbook-safe">
+                                <label class="th-songbook-safe__label" for="<?php echo esc_attr( $safe_input_id ); ?>"><?php esc_html_e( 'SAFE', 'th-songbook' ); ?></label>
+                                <div class="th-songbook-song-manager th-songbook-song-manager--safe" data-song-search="<?php echo esc_attr( $post->ID ); ?>" data-set-key="<?php echo esc_attr( $set_key ); ?>" data-field-name="<?php echo esc_attr( $safe_field ); ?>" data-empty-message="<?php echo esc_attr__( 'No SAFE songs assigned yet.', 'th-songbook' ); ?>">
+                                    <?php if ( ! empty( $available_song_choices ) ) : ?>
+                                        <div class="th-songbook-song-search">
+                                            <label class="screen-reader-text" for="<?php echo esc_attr( $safe_input_id ); ?>"><?php esc_html_e( 'Search SAFE songs', 'th-songbook' ); ?></label>
+                                            <input type="search" id="<?php echo esc_attr( $safe_input_id ); ?>" class="th-songbook-song-search__input" placeholder="<?php echo esc_attr__( 'Search songs...', 'th-songbook' ); ?>" autocomplete="off" />
+                                            <ul class="th-songbook-song-search__results" role="listbox"></ul>
+                                        </div>
+                                    <?php endif; ?>
+                                    <ul class="th-songbook-song-list">
+                                        <?php foreach ( $safe_songs as $safe_song ) : ?>
+                                            <?php
+                                            $safe_duration_display = ! empty( $safe_song['duration'] ) ? $safe_song['duration'] : __( '--:--', 'th-songbook' );
+                                            ?>
+                                            <li class="th-songbook-song-list__item<?php echo ! empty( $safe_song['missing'] ) ? ' is-missing' : ''; ?>" data-song-id="<?php echo esc_attr( $safe_song['id'] ); ?>" data-song-duration="<?php echo esc_attr( $safe_song['duration'] ); ?>">
+                                                <span class="th-songbook-song-list__handle dashicons dashicons-move" aria-hidden="true" title="<?php echo esc_attr__( 'Drag to reorder', 'th-songbook' ); ?>"></span>
+                                                <span class="th-songbook-song-list__title"><?php echo esc_html( $safe_song['title'] ); ?></span>
+                                                <span class="th-songbook-song-list__duration"><?php echo esc_html( $safe_duration_display ); ?></span>
+                                                <button type="button" class="button-link th-songbook-remove-song"><?php esc_html_e( 'Remove', 'th-songbook' ); ?></button>
+                                                <input type="hidden" name="<?php echo esc_attr( $safe_field ); ?>" value="<?php echo esc_attr( $safe_song['id'] ); ?>" />
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                    <?php if ( empty( $safe_songs ) ) : ?>
+                                        <p class="description th-songbook-song-list__empty"><?php esc_html_e( 'No SAFE songs assigned yet.', 'th-songbook' ); ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <p class="description"><?php esc_html_e( 'Optional SAFE numbers kept ready for this set.', 'th-songbook' ); ?></p>
+                                <?php
+                                $has_missing_safe = false;
+                                if ( isset( $safe_details[ $set_key ] ) ) {
+                                    foreach ( $safe_details[ $set_key ] as $safe_song ) {
+                                        if ( ! empty( $safe_song['missing'] ) ) {
+                                            $has_missing_safe = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if ( $has_missing_safe ) :
+                                    ?>
+                                    <p class="description th-songbook-safe__warning"><?php esc_html_e( 'One or more selected SAFE songs are no longer available.', 'th-songbook' ); ?></p>
                                 <?php endif; ?>
                             </div>
                             <?php
@@ -819,6 +916,7 @@ class TH_Songbook_Post_Types {
         }
 
         $encores_payload = array();
+        $safes_payload   = array();
 
         for ( $i = 1; $i <= $effective_set_count; $i++ ) {
             $field = 'th_gig_set' . $i . '_songs';
@@ -841,6 +939,18 @@ class TH_Songbook_Post_Types {
                 $encores_payload[ 'set' . $i ] = $encore_ids;
                 $combined = array_merge( $combined, $encore_ids );
             }
+
+            $safe_field = 'th_gig_set' . $i . '_safe';
+            $safe_ids   = array();
+            if ( isset( $_POST[ $safe_field ] ) ) {
+                $safe_ids = array_map( 'absint', (array) wp_unslash( $_POST[ $safe_field ] ) );
+                $safe_ids = array_values( array_unique( array_filter( $safe_ids ) ) );
+            }
+
+            if ( ! empty( $safe_ids ) ) {
+                $safes_payload[ 'set' . $i ] = $safe_ids;
+                $combined = array_merge( $combined, $safe_ids );
+            }
         }
 
         if ( empty( $sets_payload ) ) {
@@ -853,6 +963,12 @@ class TH_Songbook_Post_Types {
             delete_post_meta( $post_id, 'th_gig_encores' );
         } else {
             update_post_meta( $post_id, 'th_gig_encores', $encores_payload );
+        }
+
+        if ( empty( $safes_payload ) ) {
+            delete_post_meta( $post_id, 'th_gig_safes' );
+        } else {
+            update_post_meta( $post_id, 'th_gig_safes', $safes_payload );
         }
 
         if ( ! empty( $combined ) ) {
@@ -978,6 +1094,18 @@ class TH_Songbook_Post_Types {
                 }
             }
 
+            $safes = $this->get_gig_safes( $gig_id );
+            if ( is_array( $safes ) ) {
+                foreach ( $safes as $safe_list ) {
+                    foreach ( (array) $safe_list as $safe_id ) {
+                        $safe_id = (int) $safe_id;
+                        if ( $safe_id > 0 ) {
+                            $song_ids[] = $safe_id;
+                        }
+                    }
+                }
+            }
+
             if ( empty( $song_ids ) ) {
                 continue;
             }
@@ -1065,6 +1193,37 @@ class TH_Songbook_Post_Types {
         }
 
         return $encores;
+    }
+
+    /**
+     * Retrieve SAFE song IDs keyed by set.
+     *
+     * @param int $gig_id Gig post ID.
+     *
+     * @return array<string, array<int>>
+     */
+    public function get_gig_safes( $gig_id ) {
+        $stored_safes = get_post_meta( $gig_id, 'th_gig_safes', true );
+        $safes        = array();
+
+        if ( is_array( $stored_safes ) ) {
+            foreach ( $stored_safes as $key => $value ) {
+                $raw = (array) $value;
+                $ids = array_values(
+                    array_unique(
+                        array_filter(
+                            array_map( 'absint', $raw )
+                        )
+                    )
+                );
+
+                if ( ! empty( $ids ) ) {
+                    $safes[ $key ] = $ids;
+                }
+            }
+        }
+
+        return $safes;
     }
 
     /**

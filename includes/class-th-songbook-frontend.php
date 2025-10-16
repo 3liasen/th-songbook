@@ -282,6 +282,7 @@ class TH_Songbook_Frontend {
                 'noDuration'      => __( '--:--', 'th-songbook' ),
                 'setCountLabel'   => __( 'Sets', 'th-songbook' ),
                 'encoreLabel'     => __( 'EKSTRA', 'th-songbook' ),
+                'safeLabel'       => __( 'SAFE', 'th-songbook' ),
             ),
             'settings' => $this->plugin->get_display_settings(),
         );
@@ -328,6 +329,7 @@ class TH_Songbook_Frontend {
 
         $set_ids     = $this->post_types->get_gig_setlists( $gig_id );
         $encore_ids  = $this->post_types->get_gig_encores( $gig_id );
+        $safe_ids    = $this->post_types->get_gig_safes( $gig_id );
         $set_count   = (int) get_post_meta( $gig_id, 'th_gig_set_count', true );
         $in_between  = TH_Songbook_Utils::sanitize_song_duration_value( get_post_meta( $gig_id, 'th_gig_in_between', true ) );
         $in_between_seconds = TH_Songbook_Utils::parse_duration_to_seconds( $in_between );
@@ -358,6 +360,7 @@ class TH_Songbook_Frontend {
             foreach ( $song_ids as $song_id ) {
                 $song             = $this->post_types->get_song_display_data( $song_id );
                 $song['isEncore'] = false;
+                $song['isSafe']   = false;
                 $songs[]          = $song;
 
                 $seconds = TH_Songbook_Utils::parse_duration_to_seconds( $song['duration'] );
@@ -372,8 +375,41 @@ class TH_Songbook_Frontend {
                     'songId'   => $song['id'],
                     'missing'  => ! empty( $song['missing'] ),
                     'isEncore' => false,
+                    'isSafe'   => false,
                     'type'     => 'song',
                 );
+            }
+
+            $safe_songs = array();
+            if ( isset( $safe_ids[ $set_key ] ) ) {
+                foreach ( (array) $safe_ids[ $set_key ] as $safe_id ) {
+                    $safe_id = (int) $safe_id;
+                    if ( $safe_id < 1 ) {
+                        continue;
+                    }
+
+                    $safe_song             = $this->post_types->get_song_display_data( $safe_id );
+                    $safe_song['isEncore'] = false;
+                    $safe_song['isSafe']   = true;
+                    $songs[]               = $safe_song;
+                    $safe_songs[]          = $safe_song;
+
+                    $seconds = TH_Songbook_Utils::parse_duration_to_seconds( $safe_song['duration'] );
+                    if ( null !== $seconds ) {
+                        $combined_seconds += $seconds;
+                        $set_seconds      += $seconds;
+                    }
+
+                    $order[] = array(
+                        'setKey'   => $set_key,
+                        'index'    => count( $songs ) - 1,
+                        'songId'   => $safe_song['id'],
+                        'missing'  => ! empty( $safe_song['missing'] ),
+                        'isEncore' => false,
+                        'isSafe'   => true,
+                        'type'     => 'safe',
+                    );
+                }
             }
 
             $encore_songs = array();
@@ -386,6 +422,7 @@ class TH_Songbook_Frontend {
 
                     $encore_song             = $this->post_types->get_song_display_data( $encore_id );
                     $encore_song['isEncore'] = true;
+                    $encore_song['isSafe']   = false;
                     $songs[]                 = $encore_song;
                     $encore_songs[]          = $encore_song;
 
@@ -401,6 +438,7 @@ class TH_Songbook_Frontend {
                         'songId'   => $encore_song['id'],
                         'missing'  => ! empty( $encore_song['missing'] ),
                         'isEncore' => true,
+                        'isSafe'   => false,
                         'type'     => 'encore',
                     );
                 }
@@ -417,6 +455,8 @@ class TH_Songbook_Frontend {
                 'key'           => $set_key,
                 'label'         => sprintf( __( '%d. Set', 'th-songbook' ), $index_for_label ),
                 'songs'         => $songs,
+                'safe'          => $safe_songs,
+                'safes'         => $safe_songs,
                 'encore'        => $encore_songs,
                 'encores'       => $encore_songs,
                 'totalDuration' => TH_Songbook_Utils::format_seconds_to_duration( $set_seconds ),

@@ -128,6 +128,7 @@ class TH_Songbook_Admin {
             'song_list_text_weight'  => isset( $value['song_list_text_weight'] ) ? (int) $value['song_list_text_weight'] : $defaults['song_list_text_weight'],
             'song_hover_color'       => isset( $value['song_hover_color'] ) ? sanitize_hex_color( $value['song_hover_color'] ) : $defaults['song_hover_color'],
             'nav_hover_color'        => isset( $value['nav_hover_color'] ) ? sanitize_hex_color( $value['nav_hover_color'] ) : $defaults['nav_hover_color'],
+            'safe_badge_color'       => isset( $value['safe_badge_color'] ) ? sanitize_hex_color( $value['safe_badge_color'] ) : $defaults['safe_badge_color'],
             'song_page_url'     => isset( $value['song_page_url'] ) ? esc_url_raw( $value['song_page_url'] ) : $defaults['song_page_url'],
             'gigs_page_url'     => isset( $value['gigs_page_url'] ) ? esc_url_raw( $value['gigs_page_url'] ) : $defaults['gigs_page_url'],
             'footer_min_height' => isset( $value['footer_min_height'] ) ? (int) $value['footer_min_height'] : $defaults['footer_min_height'],
@@ -184,6 +185,10 @@ class TH_Songbook_Admin {
 
         if ( empty( $out['nav_hover_color'] ) ) {
             $out['nav_hover_color'] = $defaults['nav_hover_color'];
+        }
+
+        if ( empty( $out['safe_badge_color'] ) ) {
+            $out['safe_badge_color'] = $defaults['safe_badge_color'];
         }
 
         return $out;
@@ -329,6 +334,13 @@ class TH_Songbook_Admin {
                         <td>
                             <input name="th_songbook_display[song_hover_color]" id="song_hover_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['song_hover_color'] ); ?>" placeholder="#2271b1">
                             <p class="description"><?php esc_html_e( 'Text and border color used when a song in the overview is hovered or focused.', 'th-songbook' ); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="safe_badge_color"><?php esc_html_e( 'SAFE badge color', 'th-songbook' ); ?></label></th>
+                        <td>
+                            <input name="th_songbook_display[safe_badge_color]" id="safe_badge_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['safe_badge_color'] ); ?>" placeholder="#cde9ff">
+                            <p class="description"><?php esc_html_e( 'Background color for SAFE badges in the set list overview.', 'th-songbook' ); ?></p>
                         </td>
                     </tr>
                 </table>

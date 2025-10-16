@@ -62,6 +62,7 @@ class TH_Songbook {
         'song_list_text_weight' => 500,
         'song_hover_color'      => '#2271b1',
         'nav_hover_color'       => '#ffe268',
+        'safe_badge_color'      => '#cde9ff',
         // New: URLs for dedicated pages and footer sizing.
         'song_page_url'       => '',
         'gigs_page_url'       => '',

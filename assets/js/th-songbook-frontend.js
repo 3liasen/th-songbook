@@ -480,29 +480,47 @@
                     html += '<ol class="th-songbook-detail__set-list">';
                     set.songs.forEach( function( song, songIndex ) {
                         var isEncore = !!song.isEncore;
-                        var pointer = getPointerIndex( gig, set.key, songIndex, isEncore ? 'encore' : 'song' );
+                        var isSafe = !!song.isSafe;
+                        var pointerType = isSafe ? 'safe' : ( isEncore ? 'encore' : 'song' );
+                        var pointer = getPointerIndex( gig, set.key, songIndex, pointerType );
                         var durationLabel = song.duration || strings.noDuration || '--:--';
                         var itemClass = 'th-songbook-detail__set-item';
                         if ( isEncore ) {
                             itemClass += ' is-encore';
                         }
+                        if ( isSafe ) {
+                            itemClass += ' is-safe';
+                        }
                         html += '<li class="' + itemClass + '">';
+
+                        var flagClass = 'th-songbook-detail__set-song-flag';
+                        var flagLabel = '';
+                        if ( isEncore ) {
+                            flagClass += ' th-songbook-detail__set-song-flag--encore';
+                            flagLabel = strings.encoreLabel || 'EKSTRA';
+                        } else if ( isSafe ) {
+                            flagClass += ' th-songbook-detail__set-song-flag--safe';
+                            flagLabel = strings.safeLabel || 'SAFE';
+                        }
 
                         if ( pointer >= 0 ) {
                             var linkClass = 'th-songbook-detail__set-link';
                             if ( isEncore ) {
                                 linkClass += ' is-encore';
                             }
+                            if ( isSafe ) {
+                                linkClass += ' is-safe';
+                            }
                             html += '<button type="button" class="' + linkClass + '" data-songbook-song-link="' + pointer + '">';
-                            if ( isEncore ) {
-                                html += '<span class="th-songbook-detail__set-song-flag">' + escapeHtml( strings.encoreLabel || 'EKSTRA' ) + '</span>';
+                            if ( flagLabel ) {
+                                html += '<span class="' + flagClass + '">' + escapeHtml( flagLabel ) + '</span>';
                             }
                             html += '<span class="th-songbook-detail__set-song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</span>';
                             html += '<span class="th-songbook-detail__set-song-duration">' + escapeHtml( durationLabel ) + '</span>';
                             html += '</button>';
                         } else {
-                            if ( isEncore ) {
-                                html += '<span class="th-songbook-detail__set-song-flag">' + escapeHtml( strings.encoreLabel || 'EKSTRA' ) + '</span>';
+                            if ( flagLabel ) {
+                                html += '<span class="' + flagClass + '">' + escapeHtml( flagLabel ) + '</span>';
                             }
                             html += '<span class="th-songbook-detail__set-song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</span>';
                             html += '<span class="th-songbook-detail__set-song-duration">' + escapeHtml( durationLabel ) + '</span>';
@@ -538,13 +556,16 @@
 
         var song = pointer.song;
         var isEncoreSong = !!( pointer.isEncore || ( song && song.isEncore ) );
+        var isSafeSong = !!( pointer.isSafe || ( song && song.isSafe ) );
         var html = '<section class="th-songbook-detail__section th-songbook-detail__section--song">';
 
         html += '<header class="th-songbook-detail__song-header">';
         html += '<div class="th-songbook-detail__song-title-row">';
         var titleHtml = escapeHtml( song.title || strings.missingSong || '' );
-        if ( isEncoreSong ) {
-            titleHtml += ' <span class="th-songbook-detail__song-badge">' + escapeHtml( strings.encoreLabel || 'EKSTRA' ) + '</span>';
+        if ( isSafeSong ) {
+            titleHtml += ' <span class="th-songbook-detail__song-badge th-songbook-detail__song-badge--safe">' + escapeHtml( strings.safeLabel || 'SAFE' ) + '</span>';
+        } else if ( isEncoreSong ) {
+            titleHtml += ' <span class="th-songbook-detail__song-badge th-songbook-detail__song-badge--encore">' + escapeHtml( strings.encoreLabel || 'EKSTRA' ) + '</span>';
         }
         html += '<h4 class="th-songbook-detail__song-title">' + titleHtml + '</h4>';
         if ( song.key ) {
@@ -820,7 +841,7 @@
                 continue;
             }
 
-            var pointerType = pointer.type || ( pointer.isEncore ? 'encore' : 'song' );
+            var pointerType = pointer.type || ( pointer.isEncore ? 'encore' : ( pointer.isSafe ? 'safe' : 'song' ) );
 
             if ( pointer.setKey === setKey && pointer.index === songIndex && pointerType === targetType ) {
                 return i;
@@ -854,13 +875,14 @@
             return null;
         }
 
-        var pointerType = pointer.type || ( pointer.isEncore ? 'encore' : 'song' );
+        var pointerType = pointer.type || ( pointer.isEncore ? 'encore' : ( pointer.isSafe ? 'safe' : 'song' ) );
 
         return {
             song: song,
             setLabel: set.label,
             position: pointer.index,
             isEncore: pointerType === 'encore',
+            isSafe: pointerType === 'safe',
             type: pointerType
         };
     }
@@ -932,6 +954,28 @@
         } else {
             detailEl.style.removeProperty( '--th-songbook-footer-offset' );
         }
+    }
+
+    function parseHexColor( value ) {
+        if ( ! value && value !== 0 ) {
+            return null;
+        }
+
+        var hex = String( value ).trim();
+        if ( ! /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.test( hex ) ) {
+            return null;
+        }
+
+        if ( hex.length === 4 ) {
+            hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+        }
+
+        var intVal = parseInt( hex.slice( 1 ), 16 );
+        return {
+            r: ( intVal >> 16 ) & 255,
+            g: ( intVal >> 8 ) & 255,
+            b: intVal & 255
+        };
     }
 
     function applyDisplaySettings() {
@@ -1007,6 +1051,13 @@
         }
         if ( displaySettings.nav_hover_color ) {
             root.style.setProperty( '--th-songbook-nav-hover-color', String( displaySettings.nav_hover_color ) );
+        }
+        if ( displaySettings.safe_badge_color ) {
+            var safeRgb = parseHexColor( displaySettings.safe_badge_color );
+            if ( safeRgb ) {
+                root.style.setProperty( '--th-songbook-safe-flag-bg', 'rgba(' + safeRgb.r + ',' + safeRgb.g + ',' + safeRgb.b + ',0.18)' );
+                root.style.setProperty( '--th-songbook-safe-flag-border', 'rgba(' + safeRgb.r + ',' + safeRgb.g + ',' + safeRgb.b + ',0.35)' );
+            }
         }
     }
 

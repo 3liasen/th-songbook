@@ -2,6 +2,7 @@ th_gig_date
 th_gig_start_time
 th_gig_get_in_time
 th_gig_in_between
+th_gig_safes
 th_gig_venue
 th_gig_address
 th_gig_subject
