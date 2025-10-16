@@ -236,21 +236,7 @@ class TH_Songbook_Gig_Tools {
             return new WP_Error( 'no_songs', __( 'No songs found for this gig.', 'th-songbook' ) );
         }
 
-        require_once TH_SONGBOOK_PLUGIN_DIR . 'includes/lib/fpdf.php';
-
-        if ( ! class_exists( 'TH_Songbook_FPDF' ) ) {
-            /**
-             * Custom FPDF subclass that throws exceptions instead of exiting.
-             */
-            class TH_Songbook_FPDF extends FPDF {
-                /**
-                 * @inheritDoc
-                 */
-                public function Error( $msg ) { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
-                    throw new \RuntimeException( $msg );
-                }
-            }
-        }
+        require_once TH_SONGBOOK_PLUGIN_DIR . 'includes/class-th-songbook-fpdf.php';
 
         try {
             $pdf = new TH_Songbook_FPDF();
