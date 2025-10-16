@@ -122,19 +122,15 @@
 }
 
 .th-songbook-encore {
-    margin-top: 0.5rem;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
-.th-songbook-encore label {
+.th-songbook-encore__label {
     display: block;
     font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-
-.th-songbook-encore select {
-    width: 100%;
-    max-width: 100%;
-    min-height: 140px;
 }
 
 .th-songbook-encore__warning {

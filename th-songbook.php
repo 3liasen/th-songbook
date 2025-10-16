@@ -3,7 +3,7 @@
  * Plugin Name: TH Songbook
  * Plugin URI: https://example.com/plugins/th-songbook
  * Description: Provides song management tools tailored for TH songbook workflows.
- * Version: 1.14.0
+ * Version: 1.14.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Jan Eliasen
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'TH_SONGBOOK_VERSION' ) ) {
-    define( 'TH_SONGBOOK_VERSION', '1.14.0' );
+    define( 'TH_SONGBOOK_VERSION', '1.14.1' );
 }
 
 if ( ! defined( 'TH_SONGBOOK_PLUGIN_FILE' ) ) {

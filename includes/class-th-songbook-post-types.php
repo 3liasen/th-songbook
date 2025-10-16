@@ -486,44 +486,61 @@ class TH_Songbook_Post_Types {
                                             <button type="button" class="button-link th-songbook-remove-song"><?php esc_html_e( 'Remove', 'th-songbook' ); ?></button>
                                             <input type="hidden" name="<?php echo esc_attr( $config['field'] ); ?>" value="<?php echo esc_attr( $song['id'] ); ?>" />
                                         </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <?php if ( empty( $songs_in_set ) ) : ?>
-                        <p class="description th-songbook-song-list__empty"><?php esc_html_e( 'No songs assigned yet.', 'th-songbook' ); ?></p>
-                    <?php endif; ?>
-                    <div class="th-songbook-encore">
-                        <label for="th-songbook-encore-<?php echo esc_attr( $set_key . '-' . $post->ID ); ?>"><?php esc_html_e( 'EKSTRA', 'th-songbook' ); ?></label>
-                        <select class="th-songbook-encore-select" id="th-songbook-encore-<?php echo esc_attr( $set_key . '-' . $post->ID ); ?>" name="th_gig_<?php echo esc_attr( $set_key ); ?>_encore[]" multiple="multiple" size="6">
-                            <?php foreach ( $available_song_choices as $choice ) : ?>
-                                <?php
-                                $value       = (int) $choice['id'];
-                                $selected_ids = isset( $selected_encores[ $set_key ] ) ? (array) $selected_encores[ $set_key ] : array();
-                                $is_selected = in_array( $value, $selected_ids, true );
-                                $label       = $choice['title'];
-                                if ( ! empty( $choice['duration'] ) ) {
-                                    $label .= ' (' . $choice['duration'] . ')';
-                                }
-                                ?>
-                                <option value="<?php echo esc_attr( $value ); ?>"<?php selected( $is_selected ); ?>><?php echo esc_html( $label ); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="description"><?php esc_html_e( 'Optional EKSTRA numbers played after this set. Hold Ctrl (Cmd on Mac) to select multiple songs.', 'th-songbook' ); ?></p>
-                        <?php
-                        $has_missing_encore = false;
-                        if ( isset( $encore_details[ $set_key ] ) ) {
-                            foreach ( $encore_details[ $set_key ] as $encore_song ) {
-                                if ( ! empty( $encore_song['missing'] ) ) {
-                                    $has_missing_encore = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if ( $has_missing_encore ) :
+                                    <?php endforeach; ?>
+                                </ul>
+                                <?php if ( empty( $songs_in_set ) ) : ?>
+                                    <p class="description th-songbook-song-list__empty"><?php esc_html_e( 'No songs assigned yet.', 'th-songbook' ); ?></p>
+                                <?php endif; ?>
+                            </div>
+                            <?php
+                            $encore_songs    = isset( $encore_details[ $set_key ] ) ? $encore_details[ $set_key ] : array();
+                            $encore_field    = 'th_gig_' . $set_key . '_encore[]';
+                            $encore_input_id = 'th-songbook-encore-search-' . $set_key . '-' . $post->ID;
                             ?>
-                            <p class="description th-songbook-encore__warning"><?php esc_html_e( 'One or more selected EKSTRA songs are no longer available.', 'th-songbook' ); ?></p>
-                        <?php endif; ?>
-                    </div>
-                    </div>
+                            <div class="th-songbook-encore">
+                                <label class="th-songbook-encore__label" for="<?php echo esc_attr( $encore_input_id ); ?>"><?php esc_html_e( 'EKSTRA', 'th-songbook' ); ?></label>
+                                <div class="th-songbook-song-manager th-songbook-song-manager--encore" data-song-search="<?php echo esc_attr( $post->ID ); ?>" data-set-key="<?php echo esc_attr( $set_key ); ?>" data-field-name="<?php echo esc_attr( $encore_field ); ?>" data-empty-message="<?php echo esc_attr__( 'No encore songs assigned yet.', 'th-songbook' ); ?>">
+                                    <?php if ( ! empty( $available_song_choices ) ) : ?>
+                                        <div class="th-songbook-song-search">
+                                            <label class="screen-reader-text" for="<?php echo esc_attr( $encore_input_id ); ?>"><?php esc_html_e( 'Search encore songs', 'th-songbook' ); ?></label>
+                                            <input type="search" id="<?php echo esc_attr( $encore_input_id ); ?>" class="th-songbook-song-search__input" placeholder="<?php echo esc_attr__( 'Search songs...', 'th-songbook' ); ?>" autocomplete="off" />
+                                            <ul class="th-songbook-song-search__results" role="listbox"></ul>
+                                        </div>
+                                    <?php endif; ?>
+                                    <ul class="th-songbook-song-list">
+                                        <?php foreach ( $encore_songs as $encore_song ) : ?>
+                                            <?php
+                                            $encore_duration_display = ! empty( $encore_song['duration'] ) ? $encore_song['duration'] : __( '--:--', 'th-songbook' );
+                                            ?>
+                                            <li class="th-songbook-song-list__item<?php echo ! empty( $encore_song['missing'] ) ? ' is-missing' : ''; ?>" data-song-id="<?php echo esc_attr( $encore_song['id'] ); ?>" data-song-duration="<?php echo esc_attr( $encore_song['duration'] ); ?>">
+                                                <span class="th-songbook-song-list__handle dashicons dashicons-move" aria-hidden="true" title="<?php echo esc_attr__( 'Drag to reorder', 'th-songbook' ); ?>"></span>
+                                                <span class="th-songbook-song-list__title"><?php echo esc_html( $encore_song['title'] ); ?></span>
+                                                <span class="th-songbook-song-list__duration"><?php echo esc_html( $encore_duration_display ); ?></span>
+                                                <button type="button" class="button-link th-songbook-remove-song"><?php esc_html_e( 'Remove', 'th-songbook' ); ?></button>
+                                                <input type="hidden" name="<?php echo esc_attr( $encore_field ); ?>" value="<?php echo esc_attr( $encore_song['id'] ); ?>" />
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                    <?php if ( empty( $encore_songs ) ) : ?>
+                                        <p class="description th-songbook-song-list__empty"><?php esc_html_e( 'No encore songs assigned yet.', 'th-songbook' ); ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <p class="description"><?php esc_html_e( 'Optional EKSTRA numbers played after this set.', 'th-songbook' ); ?></p>
+                                <?php
+                                $has_missing_encore = false;
+                                if ( isset( $encore_details[ $set_key ] ) ) {
+                                    foreach ( $encore_details[ $set_key ] as $encore_song ) {
+                                        if ( ! empty( $encore_song['missing'] ) ) {
+                                            $has_missing_encore = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if ( $has_missing_encore ) :
+                                    ?>
+                                    <p class="description th-songbook-encore__warning"><?php esc_html_e( 'One or more selected EKSTRA songs are no longer available.', 'th-songbook' ); ?></p>
+                                <?php endif; ?>
+                            </div>
                     <p class="th-songbook-set-total">
                         <span class="th-songbook-set-total__label"><?php esc_html_e( 'Total time:', 'th-songbook' ); ?></span>
                         <span class="th-songbook-set-total__value" data-th-songbook-set-total="<?php echo esc_attr( $set_key ); ?>"><?php echo esc_html( $set_totals[ $set_key ] ); ?></span>

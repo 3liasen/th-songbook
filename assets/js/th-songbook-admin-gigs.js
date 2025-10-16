@@ -115,7 +115,7 @@
         var noDurationPlaceholder = i18n.noDuration || '--:--';
         var $setlistContainer = $manager.closest( '.th-songbook-setlist' );
         var $totalTarget = $setlistContainer.find( '[data-th-songbook-set-total]' );
-        var $encoreSelect = $setlistContainer.find( '.th-songbook-encore-select' );
+        var emptyMessage = $manager.data( 'emptyMessage' ) || i18n.noSongsAssigned || '';
 
         if ( $searchInput.length ) {
             $searchInput.attr( 'placeholder', i18n.searchPlaceholder || $searchInput.attr( 'placeholder' ) || '' );
@@ -128,7 +128,7 @@
         function updateTotal() {
             var totalSeconds = 0;
 
-            $list.children( '.th-songbook-song-list__item' ).each( function() {
+            $setlistContainer.find( '.th-songbook-song-list__item' ).each( function() {
                 var duration = $( this ).data( 'song-duration' );
                 var seconds = parseDuration( duration );
 
@@ -136,30 +136,6 @@
                     totalSeconds += seconds;
                 }
             } );
-
-            if ( $encoreSelect.length ) {
-                var selectedEncores = $encoreSelect.val();
-                if ( selectedEncores ) {
-                    var values = Array.isArray( selectedEncores ) ? selectedEncores : [ selectedEncores ];
-                    var seen = {};
-                    values.forEach( function( value ) {
-                        var encoreId = parseInt( value, 10 );
-                        if ( Number.isNaN( encoreId ) || encoreId <= 0 || seen[ encoreId ] ) {
-                            return;
-                        }
-
-                        seen[ encoreId ] = true;
-
-                        var encore = songIndex[ encoreId ];
-                        if ( encore && encore.duration ) {
-                            var encoreSeconds = parseDuration( encore.duration );
-                            if ( encoreSeconds !== null ) {
-                                totalSeconds += encoreSeconds;
-                            }
-                        }
-                    } );
-                }
-            }
 
             if ( $totalTarget.length ) {
                 $totalTarget.text( formatDuration( totalSeconds ) );
@@ -171,7 +147,7 @@
                 if ( ! $emptyState.length ) {
                     $emptyState = $( '<p/>' )
                         .addClass( 'description th-songbook-song-list__empty' )
-                        .text( i18n.noSongsAssigned || '' )
+                        .text( emptyMessage )
                         .appendTo( $manager );
                 }
             } else if ( $emptyState.length ) {
@@ -434,12 +410,6 @@
         ensureEmptyState();
         updateTotal();
         setupSortable();
-
-        if ( $encoreSelect.length ) {
-            $encoreSelect.on( 'change', function() {
-                updateTotal();
-            } );
-        }
     }
     function validateTimeField( field ) {
         var value = field.value.trim();
