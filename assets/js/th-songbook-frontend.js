@@ -662,7 +662,7 @@
                 setLabel = setLabel.toUpperCase();
             }
             var lastLabel = lastTemplate.replace('%s', setLabel);
-            titleHtml += ' <span class="th-songbook-detail__song-badge th-songbook-detail__song-badge--last">' + escapeHtml( '(' + lastLabel + ')' ) + '</span>';
+            titleHtml += ' <span class="th-songbook-detail__song-badge th-songbook-detail__song-badge--last">' + escapeHtml( lastLabel ) + '</span>';
         }
         html += '<h4 class="th-songbook-detail__song-title">' + titleHtml + '</h4>';
         if ( song.key ) {
