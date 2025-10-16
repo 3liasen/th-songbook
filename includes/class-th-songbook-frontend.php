@@ -99,6 +99,13 @@ class TH_Songbook_Frontend {
         wp_enqueue_style( 'th-songbook-frontend' );
         wp_enqueue_script( 'th-songbook-frontend' );
 
+        if ( isset( $data['settings']['custom_css'] ) ) {
+            $custom_css = trim( (string) $data['settings']['custom_css'] );
+            if ( '' !== $custom_css ) {
+                wp_add_inline_style( 'th-songbook-frontend', $custom_css );
+            }
+        }
+
         if ( ! $this->frontend_data_localized ) {
             wp_localize_script( 'th-songbook-frontend', 'thSongbookData', $data );
             $this->frontend_data_localized = true;

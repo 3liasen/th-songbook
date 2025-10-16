@@ -131,6 +131,7 @@ class TH_Songbook_Admin {
             'song_page_url'     => isset( $value['song_page_url'] ) ? esc_url_raw( $value['song_page_url'] ) : $defaults['song_page_url'],
             'gigs_page_url'     => isset( $value['gigs_page_url'] ) ? esc_url_raw( $value['gigs_page_url'] ) : $defaults['gigs_page_url'],
             'footer_min_height' => isset( $value['footer_min_height'] ) ? (int) $value['footer_min_height'] : $defaults['footer_min_height'],
+            'custom_css'        => isset( $value['custom_css'] ) ? $this->sanitize_custom_css( $value['custom_css'], $defaults['custom_css'] ) : $defaults['custom_css'],
         );
 
         if ( empty( $out['nav_background'] ) ) {
@@ -186,6 +187,26 @@ class TH_Songbook_Admin {
         }
 
         return $out;
+    }
+
+    /**
+     * Sanitize custom CSS input.
+     *
+     * @param string $raw      Raw CSS.
+     * @param string $fallback Default CSS.
+     * @return string
+     */
+    private function sanitize_custom_css( $raw, $fallback ) {
+        if ( ! is_string( $raw ) ) {
+            return $fallback;
+        }
+
+        $css = sanitize_textarea_field( $raw );
+
+        // Restore basic characters potentially encoded by sanitize_textarea_field.
+        $css = str_replace( array( '&#039;', '&quot;' ), array( "'", '"' ), $css );
+
+        return $css;
     }
 
     /**
@@ -321,6 +342,17 @@ class TH_Songbook_Admin {
                     <tr>
                         <th scope="row"><label for="gigs_page_url"><?php esc_html_e( 'Gigs page URL', 'th-songbook' ); ?></label></th>
                         <td><input name="th_songbook_display[gigs_page_url]" id="gigs_page_url" type="url" class="regular-text" value="<?php echo esc_attr( $settings['gigs_page_url'] ); ?>" placeholder="https://example.com/gigs/"></td>
+                    </tr>
+                </table>
+
+                <h2><?php esc_html_e( 'Custom CSS', 'th-songbook' ); ?></h2>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><label for="custom_css"><?php esc_html_e( 'Custom CSS overrides', 'th-songbook' ); ?></label></th>
+                        <td>
+                            <textarea name="th_songbook_display[custom_css]" id="custom_css" rows="10" class="large-text code"><?php echo esc_textarea( $settings['custom_css'] ); ?></textarea>
+                            <p class="description"><?php esc_html_e( 'Optional CSS that loads after the plugin styles. Useful for one-off tweaks without editing files.', 'th-songbook' ); ?></p>
+                        </td>
                     </tr>
                 </table>
                 <?php submit_button(); ?>

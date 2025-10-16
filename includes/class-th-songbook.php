@@ -66,6 +66,7 @@ class TH_Songbook {
         'song_page_url'       => '',
         'gigs_page_url'       => '',
         'footer_min_height'   => 56,
+        'custom_css'          => '',
     );
 
     /**
