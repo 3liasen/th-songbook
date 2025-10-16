@@ -655,6 +655,15 @@
         } else if ( isEncoreSong ) {
             titleHtml += ' <span class="th-songbook-detail__song-badge th-songbook-detail__song-badge--encore">' + escapeHtml( strings.encoreLabel || 'EKSTRA' ) + '</span>';
         }
+        if ( pointer.isLastInSet && pointer.setLabel ) {
+            var lastTemplate = strings.lastSongLabel || 'LAST IN %s';
+            var setLabel = String( pointer.setLabel );
+            if ( setLabel && setLabel.toUpperCase ) {
+                setLabel = setLabel.toUpperCase();
+            }
+            var lastLabel = lastTemplate.replace('%s', setLabel);
+            titleHtml += ' <span class="th-songbook-detail__song-badge th-songbook-detail__song-badge--last">' + escapeHtml( '(' + lastLabel + ')' ) + '</span>';
+        }
         html += '<h4 class="th-songbook-detail__song-title">' + titleHtml + '</h4>';
         if ( song.key ) {
             html += '<span class="th-songbook-detail__song-key" aria-label="' + escapeHtml( ( strings.keyLabel || 'Key' ) + ': ' + song.key ) + '">' + escapeHtml( song.key ) + '</span>';
@@ -971,7 +980,8 @@
             position: pointer.index,
             isEncore: pointerType === 'encore',
             isSafe: pointerType === 'safe',
-            type: pointerType
+            type: pointerType,
+            isLastInSet: !!pointer.is_last_in_set
         };
     }
 
@@ -1147,6 +1157,15 @@
                 root.style.setProperty( '--th-songbook-safe-flag-border', 'rgba(' + safeRgb.r + ',' + safeRgb.g + ',' + safeRgb.b + ',0.35)' );
                 root.style.setProperty( '--th-songbook-safe-flag-text', 'rgb(' + safeRgb.r + ',' + safeRgb.g + ',' + safeRgb.b + ')' );
             }
+        }
+        if ( displaySettings.last_song_badge_background ) {
+            root.style.setProperty( '--th-songbook-last-badge-bg', String( displaySettings.last_song_badge_background ) );
+        }
+        if ( displaySettings.last_song_badge_border ) {
+            root.style.setProperty( '--th-songbook-last-badge-border', String( displaySettings.last_song_badge_border ) );
+        }
+        if ( displaySettings.last_song_badge_text ) {
+            root.style.setProperty( '--th-songbook-last-badge-text', String( displaySettings.last_song_badge_text ) );
         }
         if ( displaySettings.gig_header_font_size ) {
             root.style.setProperty( '--th-songbook-gig-header-title-size', parseInt( displaySettings.gig_header_font_size, 10 ) + 'px' );

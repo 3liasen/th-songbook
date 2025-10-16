@@ -283,6 +283,7 @@ class TH_Songbook_Frontend {
                 'setCountLabel'   => __( 'Sets', 'th-songbook' ),
                 'encoreLabel'     => __( 'EKSTRA', 'th-songbook' ),
                 'safeLabel'       => __( 'SAFE', 'th-songbook' ),
+                'lastSongLabel'   => __( 'LAST IN %s', 'th-songbook' ),
                 'venueLabel'      => __( 'Venue', 'th-songbook' ),
                 'dateLabel'       => __( 'Date', 'th-songbook' ),
                 'timeLabel'       => __( 'Start', 'th-songbook' ),
@@ -357,14 +358,16 @@ class TH_Songbook_Frontend {
 
         $index_for_label = 0;
         foreach ( $ordered_keys as $set_key ) {
-            $song_ids = isset( $set_ids[ $set_key ] ) ? (array) $set_ids[ $set_key ] : array();
+            $song_ids = isset( $set_ids[ $set_key ] ) ? array_values( (array) $set_ids[ $set_key ] ) : array();
             $songs    = array();
             $set_seconds = 0;
+            $regular_song_total = count( $song_ids );
 
-            foreach ( $song_ids as $song_id ) {
+            foreach ( $song_ids as $position => $song_id ) {
                 $song             = $this->post_types->get_song_display_data( $song_id );
                 $song['isEncore'] = false;
                 $song['isSafe']   = false;
+                $song['isLastInSet'] = ( $regular_song_total > 0 && $position === ( $regular_song_total - 1 ) );
                 $songs[]          = $song;
 
                 $seconds = TH_Songbook_Utils::parse_duration_to_seconds( $song['duration'] );
@@ -381,6 +384,7 @@ class TH_Songbook_Frontend {
                     'isEncore' => false,
                     'isSafe'   => false,
                     'type'     => 'song',
+                    'is_last_in_set' => $song['isLastInSet'],
                 );
             }
 
@@ -395,6 +399,7 @@ class TH_Songbook_Frontend {
                     $safe_song             = $this->post_types->get_song_display_data( $safe_id );
                     $safe_song['isEncore'] = false;
                     $safe_song['isSafe']   = true;
+                    $safe_song['isLastInSet'] = false;
                     $songs[]               = $safe_song;
                     $safe_songs[]          = $safe_song;
 
@@ -412,6 +417,7 @@ class TH_Songbook_Frontend {
                         'isEncore' => false,
                         'isSafe'   => true,
                         'type'     => 'safe',
+                        'is_last_in_set' => false,
                     );
                 }
             }
@@ -427,6 +433,7 @@ class TH_Songbook_Frontend {
                     $encore_song             = $this->post_types->get_song_display_data( $encore_id );
                     $encore_song['isEncore'] = true;
                     $encore_song['isSafe']   = false;
+                    $encore_song['isLastInSet'] = false;
                     $songs[]                 = $encore_song;
                     $encore_songs[]          = $encore_song;
 
@@ -444,6 +451,7 @@ class TH_Songbook_Frontend {
                         'isEncore' => true,
                         'isSafe'   => false,
                         'type'     => 'encore',
+                        'is_last_in_set' => false,
                     );
                 }
             }

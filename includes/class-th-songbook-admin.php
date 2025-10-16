@@ -129,6 +129,9 @@ class TH_Songbook_Admin {
             'song_hover_color'       => isset( $value['song_hover_color'] ) ? sanitize_hex_color( $value['song_hover_color'] ) : $defaults['song_hover_color'],
             'nav_hover_color'        => isset( $value['nav_hover_color'] ) ? sanitize_hex_color( $value['nav_hover_color'] ) : $defaults['nav_hover_color'],
             'safe_badge_color'       => isset( $value['safe_badge_color'] ) ? sanitize_hex_color( $value['safe_badge_color'] ) : $defaults['safe_badge_color'],
+            'last_song_badge_background' => isset( $value['last_song_badge_background'] ) ? sanitize_hex_color( $value['last_song_badge_background'] ) : $defaults['last_song_badge_background'],
+            'last_song_badge_border'     => isset( $value['last_song_badge_border'] ) ? sanitize_hex_color( $value['last_song_badge_border'] ) : $defaults['last_song_badge_border'],
+            'last_song_badge_text'       => isset( $value['last_song_badge_text'] ) ? sanitize_hex_color( $value['last_song_badge_text'] ) : $defaults['last_song_badge_text'],
             'gig_header_font_size'      => isset( $value['gig_header_font_size'] ) ? (int) $value['gig_header_font_size'] : $defaults['gig_header_font_size'],
             'gig_header_font_weight'    => isset( $value['gig_header_font_weight'] ) ? (int) $value['gig_header_font_weight'] : $defaults['gig_header_font_weight'],
             'gig_header_color'          => isset( $value['gig_header_color'] ) ? sanitize_hex_color( $value['gig_header_color'] ) : $defaults['gig_header_color'],
@@ -197,6 +200,18 @@ class TH_Songbook_Admin {
 
         if ( empty( $out['safe_badge_color'] ) ) {
             $out['safe_badge_color'] = $defaults['safe_badge_color'];
+        }
+
+        if ( empty( $out['last_song_badge_background'] ) ) {
+            $out['last_song_badge_background'] = $defaults['last_song_badge_background'];
+        }
+
+        if ( empty( $out['last_song_badge_border'] ) ) {
+            $out['last_song_badge_border'] = $defaults['last_song_badge_border'];
+        }
+
+        if ( empty( $out['last_song_badge_text'] ) ) {
+            $out['last_song_badge_text'] = $defaults['last_song_badge_text'];
         }
 
         if ( $out['gig_header_font_size'] < 10 ) {
@@ -388,6 +403,21 @@ class TH_Songbook_Admin {
                             <input name="th_songbook_display[safe_badge_color]" id="safe_badge_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['safe_badge_color'] ); ?>" placeholder="#cde9ff">
                             <p class="description"><?php esc_html_e( 'Background color for SAFE badges in the set list overview.', 'th-songbook' ); ?></p>
                         </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="last_song_badge_background"><?php esc_html_e( 'Last song badge background', 'th-songbook' ); ?></label></th>
+                        <td>
+                            <input name="th_songbook_display[last_song_badge_background]" id="last_song_badge_background" type="text" class="regular-text" value="<?php echo esc_attr( $settings['last_song_badge_background'] ); ?>" placeholder="#fff1cc">
+                            <p class="description"><?php esc_html_e( 'Background color for the LAST IN SET badge shown on the single song view.', 'th-songbook' ); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="last_song_badge_border"><?php esc_html_e( 'Last song badge border', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[last_song_badge_border]" id="last_song_badge_border" type="text" class="regular-text" value="<?php echo esc_attr( $settings['last_song_badge_border'] ); ?>" placeholder="#f0b429"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="last_song_badge_text"><?php esc_html_e( 'Last song badge text color', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[last_song_badge_text]" id="last_song_badge_text" type="text" class="regular-text" value="<?php echo esc_attr( $settings['last_song_badge_text'] ); ?>" placeholder="#5b3b00"></td>
                     </tr>
                 </table>
 

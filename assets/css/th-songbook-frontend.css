@@ -17,6 +17,9 @@
     --th-songbook-safe-flag-bg: rgba(13, 110, 253, 0.18);
     --th-songbook-safe-flag-border: rgba(13, 110, 253, 0.35);
     --th-songbook-safe-flag-text: #0b4a6f;
+    --th-songbook-last-badge-bg: #fff1cc;
+    --th-songbook-last-badge-border: #f0b429;
+    --th-songbook-last-badge-text: #5b3b00;
     --th-songbook-gig-header-title-size: 28px;
     --th-songbook-gig-header-title-weight: 700;
     --th-songbook-gig-header-title-color: #000000;
@@ -358,6 +361,12 @@
     background-color: var(--th-songbook-safe-flag-bg, rgba(13, 110, 253, 0.18));
     border-color: var(--th-songbook-safe-flag-border, rgba(13, 110, 253, 0.35));
     color: var(--th-songbook-safe-flag-text, #0b4a6f);
+}
+
+.th-songbook-detail__song-badge--last {
+    background-color: var(--th-songbook-last-badge-bg, #fff1cc);
+    border-color: var(--th-songbook-last-badge-border, #f0b429);
+    color: var(--th-songbook-last-badge-text, #5b3b00);
 }
 
 .th-songbook-detail__set-song-flag {
