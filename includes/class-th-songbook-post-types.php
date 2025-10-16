@@ -32,16 +32,21 @@ class TH_Songbook_Post_Types {
 
         add_action( 'init', array( $this, 'register_song_post_type' ) );
         add_action( 'init', array( $this, 'register_gig_post_type' ) );
+        add_action( 'init', array( $this, 'register_recipient_post_type' ) );
         add_action( 'add_meta_boxes', array( $this, 'register_song_meta_boxes' ) );
         add_action( 'add_meta_boxes', array( $this, 'register_gig_meta_boxes' ) );
+        add_action( 'add_meta_boxes', array( $this, 'register_recipient_meta_boxes' ) );
         add_action( 'save_post_th_song', array( $this, 'save_song_meta' ), 10, 2 );
         add_action( 'save_post_th_gig', array( $this, 'save_gig_meta' ), 10, 2 );
+        add_action( 'save_post_th_recipient', array( $this, 'save_recipient_meta' ), 10, 2 );
         add_filter( 'manage_th_song_posts_columns', array( $this, 'filter_song_admin_columns' ) );
         add_action( 'manage_th_song_posts_custom_column', array( $this, 'render_song_admin_column' ), 10, 2 );
         add_filter( 'manage_th_gig_posts_columns', array( $this, 'filter_gig_admin_columns' ) );
         add_action( 'manage_th_gig_posts_custom_column', array( $this, 'render_gig_admin_column' ), 10, 2 );
         add_filter( 'manage_edit-th_gig_sortable_columns', array( $this, 'make_gig_columns_sortable' ) );
         add_action( 'pre_get_posts', array( $this, 'adjust_admin_list_queries' ) );
+        add_filter( 'manage_th_recipient_posts_columns', array( $this, 'filter_recipient_columns' ) );
+        add_action( 'manage_th_recipient_posts_custom_column', array( $this, 'render_recipient_column' ), 10, 2 );
     }
 
     /**
@@ -112,6 +117,42 @@ class TH_Songbook_Post_Types {
         );
 
         register_post_type( 'th_gig', $args );
+    }
+
+    /**
+     * Register TH Recipient custom post type.
+     */
+    public function register_recipient_post_type() {
+        $labels = array(
+            'name'               => _x( 'Recipients', 'post type general name', 'th-songbook' ),
+            'singular_name'      => _x( 'Recipient', 'post type singular name', 'th-songbook' ),
+            'menu_name'          => _x( 'Recipients', 'admin menu text', 'th-songbook' ),
+            'name_admin_bar'     => _x( 'Recipient', 'add new on admin bar', 'th-songbook' ),
+            'add_new'            => __( 'Add New', 'th-songbook' ),
+            'add_new_item'       => __( 'Add New Recipient', 'th-songbook' ),
+            'new_item'           => __( 'New Recipient', 'th-songbook' ),
+            'edit_item'          => __( 'Edit Recipient', 'th-songbook' ),
+            'view_item'          => __( 'View Recipient', 'th-songbook' ),
+            'all_items'          => __( 'All Recipients', 'th-songbook' ),
+            'search_items'       => __( 'Search Recipients', 'th-songbook' ),
+            'not_found'          => __( 'No recipients found.', 'th-songbook' ),
+            'not_found_in_trash' => __( 'No recipients found in Trash.', 'th-songbook' ),
+        );
+
+        $args = array(
+            'labels'          => $labels,
+            'public'          => false,
+            'show_ui'         => true,
+            'show_in_menu'    => 'th-songbook',
+            'supports'        => array( 'title' ),
+            'has_archive'     => false,
+            'rewrite'         => false,
+            'show_in_rest'    => false,
+            'capability_type' => 'post',
+            'map_meta_cap'    => true,
+        );
+
+        register_post_type( 'th_recipient', $args );
     }
 
     /**
@@ -247,6 +288,25 @@ class TH_Songbook_Post_Types {
     }
 
     /**
+     * Render recipient details meta box.
+     *
+     * @param WP_Post $post Recipient post object.
+     */
+    public function render_recipient_metabox( $post ) {
+        $email = get_post_meta( $post->ID, 'th_recipient_email', true );
+        wp_nonce_field( 'th_songbook_save_recipient', 'th_songbook_recipient_nonce' );
+        ?>
+        <div class="th-songbook-meta">
+            <div class="th-songbook-field">
+                <label for="th-recipient-email"><?php esc_html_e( 'Email address', 'th-songbook' ); ?></label>
+                <input type="email" id="th-recipient-email" name="th_recipient_email" value="<?php echo esc_attr( $email ); ?>" class="regular-text" required>
+                <p class="description"><?php esc_html_e( 'The address used when emailing set lists.', 'th-songbook' ); ?></p>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
      * Adjust admin list columns for songs.
      *
      * @param array<string, string> $columns Existing columns.
@@ -306,6 +366,25 @@ class TH_Songbook_Post_Types {
 
             $updated[ $key ] = $label;
         }
+
+        return $updated;
+    }
+
+    /**
+     * Customize Recipient admin columns.
+     *
+     * @param array<string, string> $columns Columns.
+     * @return array<string, string>
+     */
+    public function filter_recipient_columns( $columns ) {
+        $updated = array();
+
+        if ( isset( $columns['cb'] ) ) {
+            $updated['cb'] = $columns['cb'];
+        }
+
+        $updated['title'] = __( 'Name', 'th-songbook' );
+        $updated['email'] = __( 'Email', 'th-songbook' );
 
         return $updated;
     }
@@ -389,6 +468,19 @@ class TH_Songbook_Post_Types {
     }
 
     /**
+     * Render custom Recipient column content.
+     *
+     * @param string $column Column identifier.
+     * @param int    $post_id Post ID.
+     */
+    public function render_recipient_column( $column, $post_id ) {
+        if ( 'email' === $column ) {
+            $email = get_post_meta( $post_id, 'th_recipient_email', true );
+            echo '' !== $email ? esc_html( $email ) : '&mdash;';
+        }
+    }
+
+    /**
      * Register meta boxes for gigs.
      */
     public function register_gig_meta_boxes() {
@@ -397,6 +489,20 @@ class TH_Songbook_Post_Types {
             __( 'Gig Details', 'th-songbook' ),
             array( $this, 'render_gig_details_metabox' ),
             'th_gig',
+            'normal',
+            'high'
+        );
+    }
+
+    /**
+     * Register meta boxes for recipients.
+     */
+    public function register_recipient_meta_boxes() {
+        add_meta_box(
+            'th-songbook-recipient-details',
+            __( 'Recipient Details', 'th-songbook' ),
+            array( $this, 'render_recipient_metabox' ),
+            'th_recipient',
             'normal',
             'high'
         );
@@ -979,6 +1085,38 @@ class TH_Songbook_Post_Types {
     }
 
     /**
+     * Persist recipient metadata.
+     *
+     * @param int     $post_id Post ID.
+     * @param WP_Post $post    Post object.
+     */
+    public function save_recipient_meta( $post_id, $post ) {
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+            return;
+        }
+
+        if ( 'th_recipient' !== $post->post_type ) {
+            return;
+        }
+
+        if ( ! isset( $_POST['th_songbook_recipient_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['th_songbook_recipient_nonce'] ) ), 'th_songbook_save_recipient' ) ) {
+            return;
+        }
+
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
+            return;
+        }
+
+        $email = isset( $_POST['th_recipient_email'] ) ? sanitize_email( wp_unslash( $_POST['th_recipient_email'] ) ) : '';
+
+        if ( '' !== $email ) {
+            update_post_meta( $post_id, 'th_recipient_email', $email );
+        } else {
+            delete_post_meta( $post_id, 'th_recipient_email' );
+        }
+    }
+
+    /**
      * Retrieve song choices for admin UI.
      *
      * @return array<int, array{id:int,title:string,duration:string}>
@@ -1277,5 +1415,78 @@ class TH_Songbook_Post_Types {
             'missing'  => false,
         );
     }
-}
 
+    /**
+     * Retrieve all available recipients.
+     *
+     * @return array<int, array<string, string>>
+     */
+    public function get_all_recipients() {
+        $posts = get_posts(
+            array(
+                'post_type'      => 'th_recipient',
+                'post_status'    => 'publish',
+                'numberposts'    => -1,
+                'orderby'        => 'title',
+                'order'          => 'ASC',
+                'no_found_rows'  => true,
+            )
+        );
+
+        $recipients = array();
+        foreach ( $posts as $post ) {
+            $email = sanitize_email( get_post_meta( $post->ID, 'th_recipient_email', true ) );
+            if ( '' === $email ) {
+                continue;
+            }
+
+            $recipients[] = array(
+                'id'    => $post->ID,
+                'name'  => get_the_title( $post ),
+                'email' => $email,
+            );
+        }
+
+        return $recipients;
+    }
+
+    /**
+     * Retrieve recipients by ID.
+     *
+     * @param array<int> $ids Recipient IDs.
+     *
+     * @return array<int, array<string, string>>
+     */
+    public function get_recipients_by_id( $ids ) {
+        $ids = wp_parse_id_list( $ids );
+        if ( empty( $ids ) ) {
+            return array();
+        }
+
+        $posts = get_posts(
+            array(
+                'post_type'      => 'th_recipient',
+                'post_status'    => 'publish',
+                'numberposts'    => -1,
+                'post__in'       => $ids,
+                'orderby'        => 'post__in',
+            )
+        );
+
+        $recipients = array();
+        foreach ( $posts as $post ) {
+            $email = sanitize_email( get_post_meta( $post->ID, 'th_recipient_email', true ) );
+            if ( '' === $email ) {
+                continue;
+            }
+
+            $recipients[] = array(
+                'id'    => $post->ID,
+                'name'  => get_the_title( $post ),
+                'email' => $email,
+            );
+        }
+
+        return $recipients;
+    }
+}

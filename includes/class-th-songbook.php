@@ -23,6 +23,13 @@ class TH_Songbook {
     public $post_types;
 
     /**
+     * Gig tools manager.
+     *
+     * @var TH_Songbook_Gig_Tools
+     */
+    public $gig_tools;
+
+    /**
      * Admin manager.
      *
      * @var TH_Songbook_Admin
@@ -99,6 +106,7 @@ class TH_Songbook {
      */
     private function __construct() {
         $this->post_types = new TH_Songbook_Post_Types( $this );
+        $this->gig_tools  = new TH_Songbook_Gig_Tools( $this );
         $this->admin      = new TH_Songbook_Admin( $this );
         $this->frontend   = new TH_Songbook_Frontend( $this );
     }

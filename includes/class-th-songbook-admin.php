@@ -531,6 +531,15 @@ class TH_Songbook_Admin {
                 true
             );
 
+            $gig_id = 0;
+            if ( isset( $_GET['post'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $gig_id = (int) $_GET['post']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            } elseif ( isset( $_POST['post_ID'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                $gig_id = (int) $_POST['post_ID']; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            } elseif ( isset( $GLOBALS['post'] ) && $GLOBALS['post'] instanceof WP_Post ) {
+                $gig_id = (int) $GLOBALS['post']->ID;
+            }
+
             wp_localize_script(
                 'th-songbook-admin-gigs',
                 'thSongbookGig',
@@ -544,6 +553,7 @@ class TH_Songbook_Admin {
                         'dragHandle'        => __( 'Drag to reorder', 'th-songbook' ),
                         'noSongsAssigned'   => __( 'No songs assigned yet.', 'th-songbook' ),
                     ),
+                    'tools' => $this->plugin->gig_tools->get_tools_config( $gig_id ),
                 )
             );
         }

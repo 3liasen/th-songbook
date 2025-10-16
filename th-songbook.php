@@ -3,7 +3,7 @@
  * Plugin Name: TH Songbook
  * Plugin URI: https://example.com/plugins/th-songbook
  * Description: Provides song management tools tailored for TH songbook workflows.
- * Version: 1.16.1
+ * Version: 1.17.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Jan Eliasen
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'TH_SONGBOOK_VERSION' ) ) {
-    define( 'TH_SONGBOOK_VERSION', '1.16.1' );
+    define( 'TH_SONGBOOK_VERSION', '1.17.0' );
 }
 
 if ( ! defined( 'TH_SONGBOOK_PLUGIN_FILE' ) ) {
@@ -34,6 +34,7 @@ if ( ! defined( 'TH_SONGBOOK_PLUGIN_URL' ) ) {
 
 require_once TH_SONGBOOK_PLUGIN_DIR . 'includes/class-th-songbook-utils.php';
 require_once TH_SONGBOOK_PLUGIN_DIR . 'includes/class-th-songbook-post-types.php';
+require_once TH_SONGBOOK_PLUGIN_DIR . 'includes/class-th-songbook-gig-tools.php';
 require_once TH_SONGBOOK_PLUGIN_DIR . 'includes/class-th-songbook-admin.php';
 require_once TH_SONGBOOK_PLUGIN_DIR . 'includes/class-th-songbook-frontend.php';
 require_once TH_SONGBOOK_PLUGIN_DIR . 'includes/class-th-songbook.php';

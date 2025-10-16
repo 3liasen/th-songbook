@@ -441,6 +441,422 @@
         }
     }
 
+    function initGigTools( config ) {
+        var container = document.querySelector( '[data-th-songbook-gig-tools]' );
+        if ( ! container ) {
+            return;
+        }
+
+        var generateButton = container.querySelector( '[data-gig-tools-generate]' );
+        var statusEl = container.querySelector( '[data-gig-tools-status]' );
+        var actionsEl = container.querySelector( '[data-gig-tools-actions]' );
+        var printButton = container.querySelector( '[data-gig-tools-print]' );
+        var emailButton = container.querySelector( '[data-gig-tools-email]' );
+        var infoEl = container.querySelector( '.th-songbook-gig-tools__info' );
+
+        var strings = $.extend( {
+            creating: 'Creating PDF…',
+            created: 'PDF created successfully.',
+            errorGeneric: 'Something went wrong. Please try again.',
+            printing: 'Opening PDF for printing…',
+            noRecipients: 'No recipients available. Create one first.',
+            selectRecipients: 'Select at least one recipient.',
+            sending: 'Sending email…',
+            sent: 'Email sent successfully.',
+            lastGenerated: 'Last generated: %s',
+            modalTitle: 'Send set list',
+            cancelLabel: 'Cancel',
+            sendEmailLabel: 'Send Email'
+        }, config.strings || {} );
+
+        var state = {
+            gigId: config.gigId || 0,
+            enabled: !! config.enabled,
+            pdf: config.pdf || null,
+            nonces: config.nonces || {},
+            ajaxUrl: config.ajaxUrl || ( window.ajaxurl || '' ),
+            recipientsCache: null,
+            recipientsLoading: null
+        };
+
+        function setStatus( message, type ) {
+            if ( ! statusEl ) {
+                return;
+            }
+
+            statusEl.textContent = message || '';
+            statusEl.classList.remove( 'is-error', 'is-success' );
+            if ( type ) {
+                statusEl.classList.add( type );
+            }
+        }
+
+        function toggleActions( visible ) {
+            if ( ! actionsEl ) {
+                return;
+            }
+
+            if ( visible ) {
+                actionsEl.removeAttribute( 'hidden' );
+            } else {
+                actionsEl.setAttribute( 'hidden', 'hidden' );
+            }
+        }
+
+        function formatTimestamp( timestamp ) {
+            if ( ! timestamp ) {
+                return '';
+            }
+
+            var date = new Date( timestamp * 1000 );
+            if ( Number.isNaN( date.getTime() ) ) {
+                return '';
+            }
+
+            return date.toLocaleString( undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            } );
+        }
+
+        function updatePdfState( pdf ) {
+            state.pdf = pdf;
+            if ( pdf ) {
+                toggleActions( true );
+                if ( ! infoEl ) {
+                    infoEl = document.createElement( 'p' );
+                    infoEl.className = 'th-songbook-gig-tools__info';
+                    container.appendChild( infoEl );
+                }
+                var formatted = formatTimestamp( pdf.generatedAt );
+                infoEl.textContent = strings.lastGenerated.replace( '%s', formatted || '' );
+            }
+        }
+
+        function ensureEnabled() {
+            if ( ! state.enabled || ! state.gigId ) {
+                if ( generateButton ) {
+                    generateButton.disabled = true;
+                }
+                setStatus( '', '' );
+                toggleActions( !! state.pdf );
+                return false;
+            }
+
+            return true;
+        }
+
+        function requestPdf() {
+            if ( ! ensureEnabled() || ! generateButton ) {
+                return;
+            }
+
+            setStatus( strings.creating, '' );
+            generateButton.disabled = true;
+            generateButton.classList.add( 'is-busy' );
+
+            $.ajax( {
+                url: state.ajaxUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'th_songbook_generate_gig_pdf',
+                    nonce: state.nonces ? state.nonces.generate : '',
+                    gigId: state.gigId
+                }
+            } ).done( function( response ) {
+                if ( response && response.success && response.data && response.data.pdf ) {
+                    updatePdfState( response.data.pdf );
+                    setStatus( strings.created, 'is-success' );
+                } else {
+                    setStatus( response && response.data && response.data.message ? response.data.message : strings.errorGeneric, 'is-error' );
+                }
+            } ).fail( function() {
+                setStatus( strings.errorGeneric, 'is-error' );
+            } ).always( function() {
+                generateButton.disabled = false;
+                generateButton.classList.remove( 'is-busy' );
+            } );
+        }
+
+        function openPrint() {
+            if ( ! state.pdf || ! state.pdf.url ) {
+                setStatus( strings.errorGeneric, 'is-error' );
+                return;
+            }
+
+            setStatus( strings.printing, '' );
+            var win = window.open( state.pdf.url, '_blank' );
+            if ( ! win ) {
+                setStatus( strings.errorGeneric, 'is-error' );
+                return;
+            }
+            win.focus();
+            var triggerPrint = function() {
+                try {
+                    win.print();
+                } catch ( e ) {}
+            };
+            if ( win.addEventListener ) {
+                win.addEventListener( 'load', triggerPrint );
+            } else {
+                win.onload = triggerPrint;
+            }
+        }
+
+        function fetchRecipients() {
+            if ( state.recipientsCache ) {
+                return $.Deferred().resolve( state.recipientsCache ).promise();
+            }
+
+            if ( state.recipientsLoading ) {
+                return state.recipientsLoading;
+            }
+
+            state.recipientsLoading = $.ajax( {
+                url: state.ajaxUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'th_songbook_list_recipients',
+                    nonce: state.nonces ? state.nonces.recipients : ''
+                }
+            } ).then( function( response ) {
+                if ( response && response.success && response.data ) {
+                    state.recipientsCache = response.data.recipients || [];
+                    return state.recipientsCache;
+                }
+
+                return $.Deferred().reject( response && response.data && response.data.message ? response.data.message : strings.errorGeneric ).promise();
+            }, function() {
+                return $.Deferred().reject( strings.errorGeneric ).promise();
+            } ).always( function() {
+                state.recipientsLoading = null;
+            } );
+
+            return state.recipientsLoading;
+        }
+
+        var modalElements = null;
+
+        function ensureModal() {
+            if ( modalElements ) {
+                return modalElements;
+            }
+
+            var overlay = document.createElement( 'div' );
+            overlay.className = 'th-songbook-recipient-modal';
+
+            var dialog = document.createElement( 'div' );
+            dialog.className = 'th-songbook-recipient-modal__dialog';
+
+            var closeButton = document.createElement( 'button' );
+            closeButton.className = 'th-songbook-recipient-modal__close';
+            closeButton.setAttribute( 'type', 'button' );
+            closeButton.setAttribute( 'aria-label', 'Close' );
+            closeButton.textContent = '×';
+
+            var title = document.createElement( 'h2' );
+            title.className = 'th-songbook-recipient-modal__title';
+            title.textContent = strings.modalTitle;
+
+            var status = document.createElement( 'p' );
+            status.className = 'th-songbook-recipient-modal__status';
+
+            var list = document.createElement( 'ul' );
+            list.className = 'th-songbook-recipient-modal__list';
+
+            var empty = document.createElement( 'p' );
+            empty.className = 'th-songbook-recipient-modal__empty';
+            empty.textContent = strings.noRecipients;
+            empty.style.display = 'none';
+
+            var actions = document.createElement( 'div' );
+            actions.className = 'th-songbook-recipient-modal__actions';
+
+            var cancelBtn = document.createElement( 'button' );
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'button';
+            cancelBtn.textContent = ( window.wp && window.wp.i18n ) ? window.wp.i18n.__( 'Cancel', 'th-songbook' ) : strings.cancelLabel;
+
+            var sendBtn = document.createElement( 'button' );
+            sendBtn.type = 'button';
+            sendBtn.className = 'button button-primary';
+            sendBtn.textContent = ( window.wp && window.wp.i18n ) ? window.wp.i18n.__( 'Send Email', 'th-songbook' ) : strings.sendEmailLabel;
+
+            actions.appendChild( cancelBtn );
+            actions.appendChild( sendBtn );
+
+            dialog.appendChild( closeButton );
+            dialog.appendChild( title );
+            dialog.appendChild( status );
+            dialog.appendChild( empty );
+            dialog.appendChild( list );
+            dialog.appendChild( actions );
+            overlay.appendChild( dialog );
+
+            modalElements = {
+                overlay: overlay,
+                dialog: dialog,
+                status: status,
+                list: list,
+                empty: empty,
+                sendBtn: sendBtn,
+                cancelBtn: cancelBtn,
+                closeBtn: closeButton
+            };
+
+            closeButton.addEventListener( 'click', closeModal );
+            cancelBtn.addEventListener( 'click', closeModal );
+
+            overlay.addEventListener( 'click', function( event ) {
+                if ( event.target === overlay ) {
+                    closeModal();
+                }
+            } );
+
+            sendBtn.addEventListener( 'click', submitEmail );
+
+            return modalElements;
+        }
+
+        function openModal() {
+            if ( ! ensureEnabled() ) {
+                return;
+            }
+
+            var elements = ensureModal();
+            document.body.appendChild( elements.overlay );
+            setModalStatus( '' );
+            elements.sendBtn.disabled = true;
+            elements.list.innerHTML = '';
+            elements.empty.style.display = 'none';
+
+            fetchRecipients().done( function( recipients ) {
+                if ( ! recipients || ! recipients.length ) {
+                    elements.empty.style.display = '';
+                    elements.sendBtn.disabled = true;
+                    setModalStatus( strings.noRecipients, 'is-error' );
+                    return;
+                }
+
+                elements.list.innerHTML = '';
+                recipients.forEach( function( recipient ) {
+                    var li = document.createElement( 'li' );
+                    li.className = 'th-songbook-recipient-modal__item';
+
+                    var label = document.createElement( 'label' );
+                    label.style.display = 'flex';
+                    label.style.alignItems = 'center';
+                    label.style.gap = '0.5rem';
+
+                    var checkbox = document.createElement( 'input' );
+                    checkbox.type = 'checkbox';
+                    checkbox.value = recipient.id;
+
+                    var nameSpan = document.createElement( 'span' );
+                    nameSpan.textContent = recipient.name + ' (' + recipient.email + ')';
+
+                    label.appendChild( checkbox );
+                    label.appendChild( nameSpan );
+                    li.appendChild( label );
+                    elements.list.appendChild( li );
+                } );
+
+                elements.sendBtn.disabled = false;
+                setModalStatus( '' );
+            } ).fail( function( message ) {
+                setModalStatus( message || strings.errorGeneric, 'is-error' );
+                if ( modalElements ) {
+                    modalElements.sendBtn.disabled = true;
+                }
+            } );
+        }
+
+        function closeModal() {
+            if ( modalElements && modalElements.overlay.parentNode ) {
+                modalElements.overlay.parentNode.removeChild( modalElements.overlay );
+            }
+        }
+
+        function setModalStatus( message, type ) {
+            if ( ! modalElements ) {
+                return;
+            }
+            modalElements.status.textContent = message || '';
+            modalElements.status.classList.remove( 'is-error', 'is-success' );
+            if ( type ) {
+                modalElements.status.classList.add( type );
+            }
+        }
+
+        function submitEmail() {
+            if ( ! modalElements || ! state.pdf ) {
+                setModalStatus( strings.errorGeneric, 'is-error' );
+                return;
+            }
+
+            var checkboxes = modalElements.list.querySelectorAll( 'input[type="checkbox"]:checked' );
+            if ( ! checkboxes.length ) {
+                setModalStatus( strings.selectRecipients, 'is-error' );
+                return;
+            }
+
+            var recipients = Array.prototype.map.call( checkboxes, function( checkbox ) {
+                return checkbox.value;
+            } );
+
+            modalElements.sendBtn.disabled = true;
+            setModalStatus( strings.sending, '' );
+
+            $.ajax( {
+                url: state.ajaxUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'th_songbook_send_gig_email',
+                    nonce: state.nonces ? state.nonces.email : '',
+                    gigId: state.gigId,
+                    recipients: recipients
+                }
+            } ).done( function( response ) {
+                if ( response && response.success ) {
+                    setModalStatus( strings.sent, 'is-success' );
+                    setTimeout( closeModal, 1500 );
+                } else {
+                    setModalStatus( response && response.data && response.data.message ? response.data.message : strings.errorGeneric, 'is-error' );
+                }
+            } ).fail( function() {
+                setModalStatus( strings.errorGeneric, 'is-error' );
+            } ).always( function() {
+                modalElements.sendBtn.disabled = false;
+            } );
+        }
+
+        if ( generateButton ) {
+            generateButton.addEventListener( 'click', requestPdf );
+        }
+
+        if ( printButton ) {
+            printButton.addEventListener( 'click', openPrint );
+        }
+
+        if ( emailButton ) {
+            emailButton.addEventListener( 'click', openModal );
+        }
+
+        if ( state.pdf ) {
+            updatePdfState( state.pdf );
+        } else {
+            toggleActions( false );
+        }
+
+        ensureEnabled();
+    }
+
     $( function() {
         var config = window.thSongbookGig || {};
         var songs = normaliseSongs( config.songs );
@@ -477,5 +893,9 @@
         $( '.th-songbook-song-manager' ).each( function() {
             initSongManager( $( this ), songs, i18n, songIndex );
         } );
+
+        if ( config.tools ) {
+            initGigTools( config.tools );
+        }
     } );
 })( jQuery );
