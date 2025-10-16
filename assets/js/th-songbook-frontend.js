@@ -289,10 +289,6 @@
 
         switch ( action ) {
             case 'home':
-                if ( isSongOnlyMode && displaySettings && displaySettings.gigs_page_url ) {
-                    window.location.href = String( displaySettings.gigs_page_url );
-                    return;
-                }
                 state.index = null;
                 break;
             case 'prev':
