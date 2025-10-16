@@ -238,59 +238,79 @@ class TH_Songbook_Gig_Tools {
 
         require_once TH_SONGBOOK_PLUGIN_DIR . 'includes/lib/fpdf.php';
 
-        $pdf = new FPDF();
-        $pdf->SetTitle( $this->encode_pdf_text( $gig_data['title'] ) );
-        $pdf->SetAuthor( $this->encode_pdf_text( get_bloginfo( 'name' ) ) );
-        $pdf->AddPage();
-        $pdf->SetFont( 'Helvetica', 'B', 16 );
-        $pdf->Cell( 0, 10, $this->encode_pdf_text( $gig_data['title'] ), 0, 1 );
-
-        $pdf->SetFont( 'Helvetica', '', 12 );
-
-        if ( $gig_data['date_label'] ) {
-            $pdf->Cell( 0, 8, $this->encode_pdf_text( sprintf( __( 'Date: %s', 'th-songbook' ), $gig_data['date_label'] ) ), 0, 1 );
+        if ( ! class_exists( 'TH_Songbook_FPDF' ) ) {
+            /**
+             * Custom FPDF subclass that throws exceptions instead of exiting.
+             */
+            class TH_Songbook_FPDF extends FPDF {
+                /**
+                 * @inheritDoc
+                 */
+                public function Error( $msg ) { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
+                    throw new \RuntimeException( $msg );
+                }
+            }
         }
 
-        if ( $gig_data['time_label'] ) {
-            $pdf->Cell( 0, 6, $this->encode_pdf_text( sprintf( __( 'Start: %s', 'th-songbook' ), $gig_data['time_label'] ) ), 0, 1 );
-        }
+        try {
+            $pdf = new TH_Songbook_FPDF();
+            $pdf->SetTitle( $this->encode_pdf_text( $gig_data['title'] ) );
+            $pdf->SetAuthor( $this->encode_pdf_text( get_bloginfo( 'name' ) ) );
+            $pdf->AddPage();
+            $pdf->SetFont( 'Helvetica', 'B', 16 );
+            $pdf->Cell( 0, 10, $this->encode_pdf_text( $gig_data['title'] ), 0, 1 );
 
-        if ( $gig_data['venue'] ) {
-            $pdf->Cell( 0, 6, $this->encode_pdf_text( sprintf( __( 'Venue: %s', 'th-songbook' ), $gig_data['venue'] ) ), 0, 1 );
-        }
-
-        $pdf->Ln( 4 );
-
-        $set_index = 0;
-        foreach ( $gig_data['sets'] as $set ) {
-            $set_index++;
-            $pdf->SetFont( 'Helvetica', 'B', 13 );
-            $pdf->Cell( 0, 8, $this->encode_pdf_text( sprintf( __( '%d. Set', 'th-songbook' ), $set_index ) ), 0, 1 );
             $pdf->SetFont( 'Helvetica', '', 12 );
 
-            $number = 1;
-            foreach ( $set['songs'] as $song ) {
-                $label = $number . '. ' . $song['title'];
-                if ( $song['is_safe'] ) {
-                    $label .= ' (' . __( 'SAFE', 'th-songbook' ) . ')';
-                }
-                $pdf->MultiCell( 0, 6, $this->encode_pdf_text( $label ) );
-                $number++;
+            if ( $gig_data['date_label'] ) {
+                $pdf->Cell( 0, 8, $this->encode_pdf_text( sprintf( __( 'Date: %s', 'th-songbook' ), $gig_data['date_label'] ) ), 0, 1 );
             }
 
-            if ( ! empty( $set['encores'] ) ) {
-                $pdf->SetFont( 'Helvetica', 'B', 12 );
-                $pdf->Cell( 0, 7, $this->encode_pdf_text( __( 'Encores', 'th-songbook' ) ), 0, 1 );
+            if ( $gig_data['time_label'] ) {
+                $pdf->Cell( 0, 6, $this->encode_pdf_text( sprintf( __( 'Start: %s', 'th-songbook' ), $gig_data['time_label'] ) ), 0, 1 );
+            }
+
+            if ( $gig_data['venue'] ) {
+                $pdf->Cell( 0, 6, $this->encode_pdf_text( sprintf( __( 'Venue: %s', 'th-songbook' ), $gig_data['venue'] ) ), 0, 1 );
+            }
+
+            $pdf->Ln( 4 );
+
+            $set_index = 0;
+            foreach ( $gig_data['sets'] as $set ) {
+                $set_index++;
+                $pdf->SetFont( 'Helvetica', 'B', 13 );
+                $pdf->Cell( 0, 8, $this->encode_pdf_text( sprintf( __( '%d. Set', 'th-songbook' ), $set_index ) ), 0, 1 );
                 $pdf->SetFont( 'Helvetica', '', 12 );
 
-                foreach ( $set['encores'] as $encore ) {
-                    $pdf->MultiCell( 0, 6, $this->encode_pdf_text( $encore['title'] . ' (' . __( 'ENCORE', 'th-songbook' ) . ')' ) );
+                $number = 1;
+                foreach ( $set['songs'] as $song ) {
+                    $label = $number . '. ' . $song['title'];
+                    if ( $song['is_safe'] ) {
+                        $label .= ' (' . __( 'SAFE', 'th-songbook' ) . ')';
+                    }
+                    $pdf->MultiCell( 0, 6, $this->encode_pdf_text( $label ) );
+                    $number++;
+                }
+
+                if ( ! empty( $set['encores'] ) ) {
+                    $pdf->SetFont( 'Helvetica', 'B', 12 );
+                    $pdf->Cell( 0, 7, $this->encode_pdf_text( __( 'Encores', 'th-songbook' ) ), 0, 1 );
+                    $pdf->SetFont( 'Helvetica', '', 12 );
+
+                    foreach ( $set['encores'] as $encore ) {
+                        $pdf->MultiCell( 0, 6, $this->encode_pdf_text( $encore['title'] . ' (' . __( 'ENCORE', 'th-songbook' ) . ')' ) );
+                    }
+                }
+
+                if ( $set_index < count( $gig_data['sets'] ) ) {
+                    $pdf->Ln( 4 );
                 }
             }
-
-            if ( $set_index < count( $gig_data['sets'] ) ) {
-                $pdf->Ln( 4 );
-            }
+        } catch ( \RuntimeException $exception ) {
+            return new WP_Error( 'pdf_error', sprintf( __( 'PDF error: %s', 'th-songbook' ), $exception->getMessage() ) );
+        } catch ( \Throwable $exception ) {
+            return new WP_Error( 'pdf_error', sprintf( __( 'PDF error: %s', 'th-songbook' ), $exception->getMessage() ) );
         }
 
         $upload_dir = wp_upload_dir();
@@ -302,10 +322,20 @@ class TH_Songbook_Gig_Tools {
         if ( ! wp_mkdir_p( $target_dir ) ) {
             return new WP_Error( 'dir_create', __( 'Unable to create the PDF directory.', 'th-songbook' ) );
         }
+        if ( ! wp_is_writable( $target_dir ) ) {
+            return new WP_Error( 'dir_writable', __( 'The PDF directory is not writable. Please adjust file permissions.', 'th-songbook' ) );
+        }
 
         $filename = 'gig-' . $gig_id . '-' . time() . '.pdf';
         $filepath = trailingslashit( $target_dir ) . $filename;
-        $pdf->Output( 'F', $filepath );
+
+        try {
+            $pdf->Output( 'F', $filepath );
+        } catch ( \RuntimeException $exception ) {
+            return new WP_Error( 'pdf_error', sprintf( __( 'PDF error: %s', 'th-songbook' ), $exception->getMessage() ) );
+        } catch ( \Throwable $exception ) {
+            return new WP_Error( 'pdf_error', sprintf( __( 'PDF error: %s', 'th-songbook' ), $exception->getMessage() ) );
+        }
 
         $fileurl = trailingslashit( $upload_dir['baseurl'] ) . 'th-songbook/' . $filename;
         $meta    = array(
