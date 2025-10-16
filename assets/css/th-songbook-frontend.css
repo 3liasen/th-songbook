@@ -17,6 +17,14 @@
     --th-songbook-safe-flag-bg: rgba(13, 110, 253, 0.18);
     --th-songbook-safe-flag-border: rgba(13, 110, 253, 0.35);
     --th-songbook-safe-flag-text: #0b4a6f;
+    --th-songbook-gig-header-title-size: 28px;
+    --th-songbook-gig-header-title-weight: 700;
+    --th-songbook-gig-header-title-color: #000000;
+    --th-songbook-gig-header-summary-size: 16px;
+    --th-songbook-gig-header-summary-color: #000000;
+    --th-songbook-gig-header-box-bg: #ffffff;
+    --th-songbook-gig-header-box-border: #000000;
+    --th-songbook-gig-header-box-text: #000000;
 }
 
 /* Widen theme container on the dedicated single-song page to use more screen space */
@@ -121,13 +129,67 @@
 }
 
 .th-songbook-gig-detail__header {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.th-songbook-gig-detail__header-main {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(1rem, 2vw, 2.25rem);
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.th-songbook-gig-detail__title-group {
+    flex: 1 1 320px;
+    min-width: 220px;
 }
 
 .th-songbook-gig-detail__title {
-    margin: 0 0 0.5rem;
-    font-size: 1.6rem;
+    margin: 0 0 0.35rem;
+    font-size: var(--th-songbook-gig-header-title-size, 28px);
+    font-weight: var(--th-songbook-gig-header-title-weight, 700);
+    color: var(--th-songbook-gig-header-title-color, #000000);
+    line-height: 1.15;
+}
+
+.th-songbook-gig-detail__summary {
+    margin: 0;
+    font-size: var(--th-songbook-gig-header-summary-size, 16px);
+    color: var(--th-songbook-gig-header-summary-color, #000000);
+    font-weight: 500;
+}
+
+.th-songbook-gig-detail__info-box {
+    flex: 0 0 auto;
+    min-width: 220px;
+    max-width: clamp(220px, 30%, 320px);
+    border: 1px solid var(--th-songbook-gig-header-box-border, #000000);
+    border-radius: 5px;
+    background-color: var(--th-songbook-gig-header-box-bg, #ffffff);
+    color: var(--th-songbook-gig-header-box-text, #000000);
+    padding: 0.75rem 1rem;
+}
+
+.th-songbook-gig-detail__info-row {
+    display: flex;
+    gap: 0.35rem;
+    justify-content: space-between;
+    font-size: clamp(0.85rem, 1vw, 0.95rem);
+    line-height: 1.35;
+}
+
+.th-songbook-gig-detail__info-row + .th-songbook-gig-detail__info-row {
+    margin-top: 0.35rem;
+}
+
+.th-songbook-gig-detail__info-label {
     font-weight: 700;
+}
+
+.th-songbook-gig-detail__info-value {
+    text-align: right;
+    flex: 1 1 auto;
 }
 
 .th-songbook-gig-detail__meta {
@@ -138,6 +200,17 @@
     padding: 0;
     margin: 0;
     color: #50575e;
+}
+
+@media (max-width: 600px) {
+    .th-songbook-gig-detail__info-box {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+
+    .th-songbook-gig-detail__info-value {
+        text-align: left;
+    }
 }
 
 .th-songbook-detail__section {

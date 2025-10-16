@@ -389,24 +389,112 @@
         startClock();
     }
 
+    function formatDateDMY( isoDate ) {
+        if ( ! isoDate ) {
+            return '';
+        }
+
+        var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec( isoDate );
+        if ( ! match ) {
+            return isoDate;
+        }
+
+        return match[3] + '/' + match[2] + '/' + match[1];
+    }
+
     function renderHeader( gig ) {
-        var parts = [];
+        var formattedDate = formatDateDMY( gig.date ) || gig.dateDisplay || '';
+        var headingParts = [];
 
         if ( gig.title ) {
-            parts.push( gig.title );
+            headingParts.push( gig.title );
         }
 
-        if ( gig.dateDisplay ) {
-            parts.push( gig.dateDisplay );
+        if ( formattedDate ) {
+            headingParts.push( formattedDate );
         }
 
-        var headingText = parts.join( ' - ' );
-        if ( ! headingText ) {
-            headingText = gig.title || gig.dateDisplay || '';
+        var headingText = headingParts.join( ' - ' ) || gig.title || formattedDate || '';
+
+        var summaryParts = [];
+        if ( gig.setCountLabel ) {
+            summaryParts.push( gig.setCountLabel );
+        } else if ( Number.isFinite( gig.setCount ) && gig.setCount > 0 ) {
+            summaryParts.push( gig.setCount + ' ' + ( gig.setCount === 1 ? ( strings.setCountLabel || 'Sets' ).replace( /s$/, '' ) : ( strings.setCountLabel || 'Sets' ) ) );
+        }
+
+        if ( gig.songCountLabel ) {
+            summaryParts.push( gig.songCountLabel );
+        }
+
+        if ( gig.combinedDuration ) {
+            summaryParts.push( ( strings.setTotalLabel || 'Total time' ) + ': ' + gig.combinedDuration );
+        } else if ( summaryParts.length ) {
+            summaryParts.push( ( strings.setTotalLabel || 'Total time' ) + ': ' + ( strings.noDuration || '--:--' ) );
+        }
+
+        var summaryText = summaryParts.join( ' | ' );
+
+        var infoRows = [];
+        if ( gig.venue || gig.address ) {
+            var venuePieces = [];
+            if ( gig.venue ) {
+                venuePieces.push( gig.venue );
+            }
+            if ( gig.address ) {
+                venuePieces.push( gig.address );
+            }
+            if ( venuePieces.length ) {
+                infoRows.push( {
+                    label: strings.venueLabel || 'Venue',
+                    value: venuePieces.join( ' | ' )
+                } );
+            }
+        }
+
+        if ( formattedDate ) {
+            infoRows.push( {
+                label: strings.dateLabel || 'Date',
+                value: formattedDate
+            } );
+        }
+
+        if ( gig.timeDisplay ) {
+            infoRows.push( {
+                label: strings.timeLabel || 'Start',
+                value: gig.timeDisplay
+            } );
+        }
+
+        if ( gig.getInDisplay ) {
+            infoRows.push( {
+                label: strings.getInLabel || 'Get-in',
+                value: gig.getInDisplay
+            } );
+        }
+
+        var infoHtml = '';
+        if ( infoRows.length ) {
+            infoHtml = '<aside class="th-songbook-gig-detail__info-box">';
+            infoRows.forEach( function( row ) {
+                infoHtml += '<div class="th-songbook-gig-detail__info-row">';
+                infoHtml += '<span class="th-songbook-gig-detail__info-label">' + escapeHtml( row.label ) + ':</span>';
+                infoHtml += '<span class="th-songbook-gig-detail__info-value">' + escapeHtml( row.value ) + '</span>';
+                infoHtml += '</div>';
+            } );
+            infoHtml += '</aside>';
         }
 
         var html = '<header class="th-songbook-gig-detail__header">';
+        html += '<div class="th-songbook-gig-detail__header-main">';
+        html += '<div class="th-songbook-gig-detail__title-group">';
         html += '<h3 class="th-songbook-gig-detail__title">' + escapeHtml( headingText ) + '</h3>';
+        if ( summaryText ) {
+            html += '<p class="th-songbook-gig-detail__summary">' + escapeHtml( summaryText ) + '</p>';
+        }
+        html += '</div>';
+        html += infoHtml;
+        html += '</div>';
         html += '</header>';
 
         return html;
@@ -1057,7 +1145,32 @@
             if ( safeRgb ) {
                 root.style.setProperty( '--th-songbook-safe-flag-bg', 'rgba(' + safeRgb.r + ',' + safeRgb.g + ',' + safeRgb.b + ',0.18)' );
                 root.style.setProperty( '--th-songbook-safe-flag-border', 'rgba(' + safeRgb.r + ',' + safeRgb.g + ',' + safeRgb.b + ',0.35)' );
+                root.style.setProperty( '--th-songbook-safe-flag-text', 'rgb(' + safeRgb.r + ',' + safeRgb.g + ',' + safeRgb.b + ')' );
             }
+        }
+        if ( displaySettings.gig_header_font_size ) {
+            root.style.setProperty( '--th-songbook-gig-header-title-size', parseInt( displaySettings.gig_header_font_size, 10 ) + 'px' );
+        }
+        if ( displaySettings.gig_header_font_weight ) {
+            root.style.setProperty( '--th-songbook-gig-header-title-weight', String( displaySettings.gig_header_font_weight ) );
+        }
+        if ( displaySettings.gig_header_color ) {
+            root.style.setProperty( '--th-songbook-gig-header-title-color', String( displaySettings.gig_header_color ) );
+        }
+        if ( displaySettings.gig_header_summary_size ) {
+            root.style.setProperty( '--th-songbook-gig-header-summary-size', parseInt( displaySettings.gig_header_summary_size, 10 ) + 'px' );
+        }
+        if ( displaySettings.gig_header_summary_color ) {
+            root.style.setProperty( '--th-songbook-gig-header-summary-color', String( displaySettings.gig_header_summary_color ) );
+        }
+        if ( displaySettings.gig_header_box_background ) {
+            root.style.setProperty( '--th-songbook-gig-header-box-bg', String( displaySettings.gig_header_box_background ) );
+        }
+        if ( displaySettings.gig_header_box_border ) {
+            root.style.setProperty( '--th-songbook-gig-header-box-border', String( displaySettings.gig_header_box_border ) );
+        }
+        if ( displaySettings.gig_header_box_text ) {
+            root.style.setProperty( '--th-songbook-gig-header-box-text', String( displaySettings.gig_header_box_text ) );
         }
     }
 

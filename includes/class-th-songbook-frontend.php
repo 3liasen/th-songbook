@@ -283,6 +283,10 @@ class TH_Songbook_Frontend {
                 'setCountLabel'   => __( 'Sets', 'th-songbook' ),
                 'encoreLabel'     => __( 'EKSTRA', 'th-songbook' ),
                 'safeLabel'       => __( 'SAFE', 'th-songbook' ),
+                'venueLabel'      => __( 'Venue', 'th-songbook' ),
+                'dateLabel'       => __( 'Date', 'th-songbook' ),
+                'timeLabel'       => __( 'Start', 'th-songbook' ),
+                'getInLabel'      => __( 'Get-in', 'th-songbook' ),
             ),
             'settings' => $this->plugin->get_display_settings(),
         );
@@ -473,6 +477,18 @@ class TH_Songbook_Frontend {
         $address    = get_post_meta( $gig_id, 'th_gig_address', true );
         $subject    = get_post_meta( $gig_id, 'th_gig_subject', true );
         $notes_html = $subject ? wpautop( esc_html( $subject ) ) : '';
+        $get_in_raw = get_post_meta( $gig_id, 'th_gig_get_in_time', true );
+        $get_in_display = '';
+        if ( ! empty( $get_in_raw ) ) {
+            $timezone  = wp_timezone();
+            $reference = '1970-01-01 ' . $get_in_raw;
+            $time_obj  = date_create_immutable_from_format( 'Y-m-d H:i', $reference, $timezone );
+            if ( $time_obj instanceof \DateTimeImmutable ) {
+                $get_in_display = wp_date( get_option( 'time_format' ), $time_obj->getTimestamp(), $timezone );
+            } else {
+                $get_in_display = $get_in_raw;
+            }
+        }
 
         $non_empty_sets = array_filter(
             $set_ids,
@@ -511,6 +527,7 @@ class TH_Songbook_Frontend {
             'order'            => $order,
             'setCount'         => $set_count,
             'setCountLabel'    => $set_count_label,
+            'getInDisplay'     => $get_in_display,
             'inBetweenDuration' => $in_between,
         );
     }

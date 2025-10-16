@@ -129,6 +129,14 @@ class TH_Songbook_Admin {
             'song_hover_color'       => isset( $value['song_hover_color'] ) ? sanitize_hex_color( $value['song_hover_color'] ) : $defaults['song_hover_color'],
             'nav_hover_color'        => isset( $value['nav_hover_color'] ) ? sanitize_hex_color( $value['nav_hover_color'] ) : $defaults['nav_hover_color'],
             'safe_badge_color'       => isset( $value['safe_badge_color'] ) ? sanitize_hex_color( $value['safe_badge_color'] ) : $defaults['safe_badge_color'],
+            'gig_header_font_size'      => isset( $value['gig_header_font_size'] ) ? (int) $value['gig_header_font_size'] : $defaults['gig_header_font_size'],
+            'gig_header_font_weight'    => isset( $value['gig_header_font_weight'] ) ? (int) $value['gig_header_font_weight'] : $defaults['gig_header_font_weight'],
+            'gig_header_color'          => isset( $value['gig_header_color'] ) ? sanitize_hex_color( $value['gig_header_color'] ) : $defaults['gig_header_color'],
+            'gig_header_summary_size'   => isset( $value['gig_header_summary_size'] ) ? (int) $value['gig_header_summary_size'] : $defaults['gig_header_summary_size'],
+            'gig_header_summary_color'  => isset( $value['gig_header_summary_color'] ) ? sanitize_hex_color( $value['gig_header_summary_color'] ) : $defaults['gig_header_summary_color'],
+            'gig_header_box_background' => isset( $value['gig_header_box_background'] ) ? sanitize_hex_color( $value['gig_header_box_background'] ) : $defaults['gig_header_box_background'],
+            'gig_header_box_border'     => isset( $value['gig_header_box_border'] ) ? sanitize_hex_color( $value['gig_header_box_border'] ) : $defaults['gig_header_box_border'],
+            'gig_header_box_text'       => isset( $value['gig_header_box_text'] ) ? sanitize_hex_color( $value['gig_header_box_text'] ) : $defaults['gig_header_box_text'],
             'song_page_url'     => isset( $value['song_page_url'] ) ? esc_url_raw( $value['song_page_url'] ) : $defaults['song_page_url'],
             'gigs_page_url'     => isset( $value['gigs_page_url'] ) ? esc_url_raw( $value['gigs_page_url'] ) : $defaults['gigs_page_url'],
             'footer_min_height' => isset( $value['footer_min_height'] ) ? (int) $value['footer_min_height'] : $defaults['footer_min_height'],
@@ -189,6 +197,44 @@ class TH_Songbook_Admin {
 
         if ( empty( $out['safe_badge_color'] ) ) {
             $out['safe_badge_color'] = $defaults['safe_badge_color'];
+        }
+
+        if ( $out['gig_header_font_size'] < 10 ) {
+            $out['gig_header_font_size'] = $defaults['gig_header_font_size'];
+        } elseif ( $out['gig_header_font_size'] > 96 ) {
+            $out['gig_header_font_size'] = 96;
+        }
+
+        if ( $out['gig_header_font_weight'] < 100 ) {
+            $out['gig_header_font_weight'] = 100;
+        } elseif ( $out['gig_header_font_weight'] > 900 ) {
+            $out['gig_header_font_weight'] = 900;
+        }
+
+        if ( empty( $out['gig_header_color'] ) ) {
+            $out['gig_header_color'] = $defaults['gig_header_color'];
+        }
+
+        if ( $out['gig_header_summary_size'] < 8 ) {
+            $out['gig_header_summary_size'] = $defaults['gig_header_summary_size'];
+        } elseif ( $out['gig_header_summary_size'] > 72 ) {
+            $out['gig_header_summary_size'] = 72;
+        }
+
+        if ( empty( $out['gig_header_summary_color'] ) ) {
+            $out['gig_header_summary_color'] = $defaults['gig_header_summary_color'];
+        }
+
+        if ( empty( $out['gig_header_box_background'] ) ) {
+            $out['gig_header_box_background'] = $defaults['gig_header_box_background'];
+        }
+
+        if ( empty( $out['gig_header_box_border'] ) ) {
+            $out['gig_header_box_border'] = $defaults['gig_header_box_border'];
+        }
+
+        if ( empty( $out['gig_header_box_text'] ) ) {
+            $out['gig_header_box_text'] = $defaults['gig_header_box_text'];
         }
 
         return $out;
@@ -342,6 +388,42 @@ class TH_Songbook_Admin {
                             <input name="th_songbook_display[safe_badge_color]" id="safe_badge_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['safe_badge_color'] ); ?>" placeholder="#cde9ff">
                             <p class="description"><?php esc_html_e( 'Background color for SAFE badges in the set list overview.', 'th-songbook' ); ?></p>
                         </td>
+                    </tr>
+                </table>
+
+                <h2><?php esc_html_e( 'Gig header', 'th-songbook' ); ?></h2>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><label for="gig_header_font_size"><?php esc_html_e( 'Title font size (px)', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[gig_header_font_size]" id="gig_header_font_size" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['gig_header_font_size'] ); ?>" min="10" max="96" step="1"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="gig_header_font_weight"><?php esc_html_e( 'Title font weight', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[gig_header_font_weight]" id="gig_header_font_weight" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['gig_header_font_weight'] ); ?>" min="100" max="900" step="100"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="gig_header_color"><?php esc_html_e( 'Title color', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[gig_header_color]" id="gig_header_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['gig_header_color'] ); ?>" placeholder="#000000"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="gig_header_summary_size"><?php esc_html_e( 'Summary font size (px)', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[gig_header_summary_size]" id="gig_header_summary_size" type="number" class="small-text" value="<?php echo esc_attr( (int) $settings['gig_header_summary_size'] ); ?>" min="8" max="72" step="1"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="gig_header_summary_color"><?php esc_html_e( 'Summary color', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[gig_header_summary_color]" id="gig_header_summary_color" type="text" class="regular-text" value="<?php echo esc_attr( $settings['gig_header_summary_color'] ); ?>" placeholder="#000000"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="gig_header_box_background"><?php esc_html_e( 'Info box background', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[gig_header_box_background]" id="gig_header_box_background" type="text" class="regular-text" value="<?php echo esc_attr( $settings['gig_header_box_background'] ); ?>" placeholder="#ffffff"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="gig_header_box_border"><?php esc_html_e( 'Info box border color', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[gig_header_box_border]" id="gig_header_box_border" type="text" class="regular-text" value="<?php echo esc_attr( $settings['gig_header_box_border'] ); ?>" placeholder="#000000"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="gig_header_box_text"><?php esc_html_e( 'Info box text color', 'th-songbook' ); ?></label></th>
+                        <td><input name="th_songbook_display[gig_header_box_text]" id="gig_header_box_text" type="text" class="regular-text" value="<?php echo esc_attr( $settings['gig_header_box_text'] ); ?>" placeholder="#000000"></td>
                     </tr>
                 </table>
 
