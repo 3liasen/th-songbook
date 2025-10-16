@@ -82,6 +82,16 @@
         return minutesText + ':' + secondsText;
     }
 
+    function getInBetweenSeconds() {
+        var $field = $( '#th_gig_in_between' );
+        if ( ! $field.length ) {
+            return 0;
+        }
+
+        var parsed = parseDuration( $field.val() );
+        return parsed !== null ? parsed : 0;
+    }
+
     function getSelectedSongIds( scope ) {
         var ids = [];
         var $items;
@@ -136,6 +146,14 @@
                     totalSeconds += seconds;
                 }
             } );
+
+            var inBetweenSeconds = getInBetweenSeconds();
+            if ( inBetweenSeconds > 0 ) {
+                var itemCount = $setlistContainer.find( '.th-songbook-song-list__item' ).length;
+                if ( itemCount > 1 ) {
+                    totalSeconds += ( itemCount - 1 ) * inBetweenSeconds;
+                }
+            }
 
             if ( $totalTarget.length ) {
                 $totalTarget.text( formatDuration( totalSeconds ) );
@@ -410,6 +428,8 @@
         ensureEmptyState();
         updateTotal();
         setupSortable();
+
+        $( document ).on( 'thSongbookInBetweenUpdated', updateTotal );
     }
     function validateTimeField( field ) {
         var value = field.value.trim();
@@ -444,6 +464,13 @@
                 $timeFields.each( function() {
                     validateTimeField( this );
                 } );
+            } );
+        }
+
+        var $inBetweenField = $( '#th_gig_in_between' );
+        if ( $inBetweenField.length ) {
+            $inBetweenField.on( 'input change', function() {
+                $( document ).trigger( 'thSongbookInBetweenUpdated' );
             } );
         }
 

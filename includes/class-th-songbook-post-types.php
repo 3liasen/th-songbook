@@ -408,13 +408,14 @@ class TH_Songbook_Post_Types {
      * @param WP_Post $post Current gig post.
      */
     public function render_gig_details_metabox( $post ) {
-        $venue      = get_post_meta( $post->ID, 'th_gig_venue', true );
-        $date       = get_post_meta( $post->ID, 'th_gig_date', true );
-        $start_time = get_post_meta( $post->ID, 'th_gig_start_time', true );
-        $get_in     = get_post_meta( $post->ID, 'th_gig_get_in_time', true );
-        $address    = get_post_meta( $post->ID, 'th_gig_address', true );
-        $subject    = get_post_meta( $post->ID, 'th_gig_subject', true );
-        $set_count  = (int) get_post_meta( $post->ID, 'th_gig_set_count', true );
+        $venue       = get_post_meta( $post->ID, 'th_gig_venue', true );
+        $date        = get_post_meta( $post->ID, 'th_gig_date', true );
+        $start_time  = get_post_meta( $post->ID, 'th_gig_start_time', true );
+        $get_in      = get_post_meta( $post->ID, 'th_gig_get_in_time', true );
+        $address     = get_post_meta( $post->ID, 'th_gig_address', true );
+        $subject     = get_post_meta( $post->ID, 'th_gig_subject', true );
+        $set_count   = (int) get_post_meta( $post->ID, 'th_gig_set_count', true );
+        $in_between  = TH_Songbook_Utils::sanitize_song_duration_value( get_post_meta( $post->ID, 'th_gig_in_between', true ) );
 
         if ( $set_count < 1 ) {
             $set_count = 2;
@@ -479,8 +480,9 @@ class TH_Songbook_Post_Types {
             $available_song_map[ $song_choice['id'] ] = $song_choice;
         }
 
-        $selected_sets  = array();
-        $encore_details = array();
+        $selected_sets      = array();
+        $encore_details     = array();
+        $in_between_seconds = TH_Songbook_Utils::parse_duration_to_seconds( $in_between );
 
         foreach ( $selected_set_ids as $set_key => $song_ids ) {
             foreach ( $song_ids as $song_id ) {
@@ -534,7 +536,7 @@ class TH_Songbook_Post_Types {
             if ( isset( $encore_details[ $set_key ] ) && ! empty( $encore_details[ $set_key ] ) ) {
                 $songs_in = array_merge( $songs_in, $encore_details[ $set_key ] );
             }
-            $set_totals[ $set_key ] = TH_Songbook_Utils::calculate_set_total_duration( $songs_in );
+            $set_totals[ $set_key ] = TH_Songbook_Utils::calculate_set_total_duration( $songs_in, $in_between_seconds );
         }
 
         $set_configs = array();
@@ -576,6 +578,12 @@ class TH_Songbook_Post_Types {
                 <label for="th_gig_set_count"><?php esc_html_e( 'Number of sets', 'th-songbook' ); ?></label>
                 <input type="number" class="small-text" id="th_gig_set_count" name="th_gig_set_count" value="<?php echo esc_attr( $set_count ); ?>" min="1" max="6" step="1" />
                 <p class="description"><?php esc_html_e( 'Displayed in the gig overview and front-end set list.', 'th-songbook' ); ?></p>
+            </div>
+
+            <div class="th-songbook-field">
+                <label for="th_gig_in_between"><?php esc_html_e( 'In between song duration (mm:ss)', 'th-songbook' ); ?></label>
+                <input type="text" class="small-text" id="th_gig_in_between" name="th_gig_in_between" value="<?php echo esc_attr( $in_between ); ?>" placeholder="00:30" pattern="^\d+:[0-5][0-9]$" inputmode="numeric" />
+                <p class="description"><?php esc_html_e( 'Added between every song when calculating set totals.', 'th-songbook' ); ?></p>
             </div>
 
             <div class="th-songbook-field">
@@ -776,6 +784,7 @@ class TH_Songbook_Post_Types {
         $address    = isset( $_POST['th_gig_address'] ) ? sanitize_text_field( wp_unslash( $_POST['th_gig_address'] ) ) : '';
         $subject    = isset( $_POST['th_gig_subject'] ) ? sanitize_textarea_field( wp_unslash( $_POST['th_gig_subject'] ) ) : '';
         $set_count  = isset( $_POST['th_gig_set_count'] ) ? absint( wp_unslash( $_POST['th_gig_set_count'] ) ) : 0;
+        $in_between = isset( $_POST['th_gig_in_between'] ) ? TH_Songbook_Utils::sanitize_song_duration_value( wp_unslash( $_POST['th_gig_in_between'] ) ) : '';
 
         if ( $set_count < 1 ) {
             $set_count = 0;
@@ -790,6 +799,7 @@ class TH_Songbook_Post_Types {
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_address', $address );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_subject', $subject );
         TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_set_count', $set_count );
+        TH_Songbook_Utils::update_meta_value( $post_id, 'th_gig_in_between', $in_between );
 
         // Collect dynamic sets submitted according to set_count.
         $sets_payload = array();

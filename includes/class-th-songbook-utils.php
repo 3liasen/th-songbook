@@ -87,12 +87,14 @@ class TH_Songbook_Utils {
     /**
      * Calculate total duration for songs.
      *
-     * @param array<int, array<string, mixed>> $songs Songs list.
+     * @param array<int, array<string, mixed>> $songs   Songs list.
+     * @param int|string                       $spacer Optional spacer duration (seconds or mm:ss).
      *
      * @return string Total duration formatted as mm:ss.
      */
-    public static function calculate_set_total_duration( array $songs ) {
+    public static function calculate_set_total_duration( array $songs, $spacer = 0 ) {
         $total_seconds = 0;
+        $song_count    = count( $songs );
 
         foreach ( $songs as $song ) {
             if ( empty( $song['duration'] ) ) {
@@ -104,6 +106,21 @@ class TH_Songbook_Utils {
             if ( null !== $seconds ) {
                 $total_seconds += $seconds;
             }
+        }
+
+        $spacer_seconds = 0;
+
+        if ( is_numeric( $spacer ) ) {
+            $spacer_seconds = (int) $spacer;
+        } else {
+            $parsed = self::parse_duration_to_seconds( (string) $spacer );
+            if ( null !== $parsed ) {
+                $spacer_seconds = $parsed;
+            }
+        }
+
+        if ( $spacer_seconds > 0 && $song_count > 1 ) {
+            $total_seconds += $spacer_seconds * ( $song_count - 1 );
         }
 
         return self::format_seconds_to_duration( $total_seconds );

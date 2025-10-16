@@ -329,6 +329,8 @@ class TH_Songbook_Frontend {
         $set_ids     = $this->post_types->get_gig_setlists( $gig_id );
         $encore_ids  = $this->post_types->get_gig_encores( $gig_id );
         $set_count   = (int) get_post_meta( $gig_id, 'th_gig_set_count', true );
+        $in_between  = TH_Songbook_Utils::sanitize_song_duration_value( get_post_meta( $gig_id, 'th_gig_in_between', true ) );
+        $in_between_seconds = TH_Songbook_Utils::parse_duration_to_seconds( $in_between );
 
         $sets            = array();
         $order           = array();
@@ -404,6 +406,12 @@ class TH_Songbook_Frontend {
                 }
             }
 
+            if ( $in_between_seconds && count( $songs ) > 1 ) {
+                $spacer_total = $in_between_seconds * ( count( $songs ) - 1 );
+                $set_seconds += $spacer_total;
+                $combined_seconds += $spacer_total;
+            }
+
             $index_for_label++;
             $sets[] = array(
                 'key'           => $set_key,
@@ -463,6 +471,7 @@ class TH_Songbook_Frontend {
             'order'            => $order,
             'setCount'         => $set_count,
             'setCountLabel'    => $set_count_label,
+            'inBetweenDuration' => $in_between,
         );
     }
 
