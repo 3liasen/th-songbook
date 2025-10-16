@@ -274,7 +274,7 @@ class TH_Songbook_Frontend {
                 'noSongs'         => __( 'No songs assigned yet.', 'th-songbook' ),
                 'noDuration'      => __( '--:--', 'th-songbook' ),
                 'setCountLabel'   => __( 'Sets', 'th-songbook' ),
-                'encoreLabel'     => __( 'Encore', 'th-songbook' ),
+                'encoreLabel'     => __( 'EKSTRA', 'th-songbook' ),
             ),
             'settings' => $this->plugin->get_display_settings(),
         );

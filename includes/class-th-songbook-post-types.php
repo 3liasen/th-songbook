@@ -16,6 +16,13 @@ class TH_Songbook_Post_Types {
     private $plugin;
 
     /**
+     * Cached map of latest gig dates per song.
+     *
+     * @var array<int|string, string>|null
+     */
+    private $song_last_used_map = null;
+
+    /**
      * Constructor.
      *
      * @param TH_Songbook $plugin Main plugin instance.
@@ -29,6 +36,8 @@ class TH_Songbook_Post_Types {
         add_action( 'add_meta_boxes', array( $this, 'register_gig_meta_boxes' ) );
         add_action( 'save_post_th_song', array( $this, 'save_song_meta' ), 10, 2 );
         add_action( 'save_post_th_gig', array( $this, 'save_gig_meta' ), 10, 2 );
+        add_filter( 'manage_th_song_posts_columns', array( $this, 'filter_song_admin_columns' ) );
+        add_action( 'manage_th_song_posts_custom_column', array( $this, 'render_song_admin_column' ), 10, 2 );
     }
 
     /**
@@ -186,6 +195,66 @@ class TH_Songbook_Post_Types {
                 </div>
         </div>
         <?php
+    }
+
+    /**
+     * Adjust admin list columns for songs.
+     *
+     * @param array<string, string> $columns Existing columns.
+     * @return array<string, string> Modified columns.
+     */
+    public function filter_song_admin_columns( $columns ) {
+        $updated = array();
+
+        if ( isset( $columns['cb'] ) ) {
+            $updated['cb'] = $columns['cb'];
+        }
+
+        $updated['title']               = __( 'Title', 'th-songbook' );
+        $updated['th_song_by']          = __( 'By', 'th-songbook' );
+        $updated['th_song_key']         = __( 'Key', 'th-songbook' );
+        $updated['th_song_duration']    = __( 'Song length', 'th-songbook' );
+        $updated['th_song_last_used']   = __( 'Last used (Gig date)', 'th-songbook' );
+
+        // Preserve any remaining registered columns (e.g., date, taxonomies).
+        foreach ( $columns as $key => $label ) {
+            if ( isset( $updated[ $key ] ) ) {
+                continue;
+            }
+            $updated[ $key ] = $label;
+        }
+
+        return $updated;
+    }
+
+    /**
+     * Render custom song column content.
+     *
+     * @param string $column  Column identifier.
+     * @param int    $post_id Post ID.
+     */
+    public function render_song_admin_column( $column, $post_id ) {
+        switch ( $column ) {
+            case 'th_song_by':
+                $by = get_post_meta( $post_id, 'th_song_by', true );
+                if ( '' === $by ) {
+                    $by = get_post_meta( $post_id, 'th_song_composer', true );
+                }
+                echo '' !== $by ? esc_html( $by ) : '&mdash;';
+                break;
+            case 'th_song_key':
+                $key = get_post_meta( $post_id, 'th_song_key', true );
+                echo '' !== $key ? esc_html( $key ) : '&mdash;';
+                break;
+            case 'th_song_duration':
+                $duration = TH_Songbook_Utils::sanitize_song_duration_value( get_post_meta( $post_id, 'th_song_duration', true ) );
+                echo '' !== $duration ? esc_html( $duration ) : '&mdash;';
+                break;
+            case 'th_song_last_used':
+                $last_used = $this->get_song_last_used_display( $post_id );
+                echo '' !== $last_used ? esc_html( $last_used ) : '&mdash;';
+                break;
+        }
     }
 
     /**
@@ -413,9 +482,9 @@ class TH_Songbook_Post_Types {
                         <p class="description th-songbook-song-list__empty"><?php esc_html_e( 'No songs assigned yet.', 'th-songbook' ); ?></p>
                     <?php endif; ?>
                     <div class="th-songbook-encore">
-                        <label for="th-songbook-encore-<?php echo esc_attr( $set_key . '-' . $post->ID ); ?>"><?php esc_html_e( 'Encore song', 'th-songbook' ); ?></label>
+                        <label for="th-songbook-encore-<?php echo esc_attr( $set_key . '-' . $post->ID ); ?>"><?php esc_html_e( 'EKSTRA', 'th-songbook' ); ?></label>
                         <select class="th-songbook-encore-select" id="th-songbook-encore-<?php echo esc_attr( $set_key . '-' . $post->ID ); ?>" name="th_gig_<?php echo esc_attr( $set_key ); ?>_encore">
-                            <option value="0"><?php esc_html_e( 'No encore', 'th-songbook' ); ?></option>
+                            <option value="0"><?php esc_html_e( 'No EKSTRA', 'th-songbook' ); ?></option>
                             <?php foreach ( $available_song_choices as $choice ) : ?>
                                 <?php
                                 $value       = (int) $choice['id'];
@@ -428,9 +497,9 @@ class TH_Songbook_Post_Types {
                                 <option value="<?php echo esc_attr( $value ); ?>"<?php selected( $is_selected ); ?>><?php echo esc_html( $label ); ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <p class="description"><?php esc_html_e( 'Optional extra number played after this set.', 'th-songbook' ); ?></p>
+                        <p class="description"><?php esc_html_e( 'Optional EKSTRA number played after this set.', 'th-songbook' ); ?></p>
                         <?php if ( isset( $encore_details[ $set_key ] ) && ! empty( $encore_details[ $set_key ]['missing'] ) ) : ?>
-                            <p class="description th-songbook-encore__warning"><?php esc_html_e( 'Selected encore song is no longer available.', 'th-songbook' ); ?></p>
+                            <p class="description th-songbook-encore__warning"><?php esc_html_e( 'Selected EKSTRA is no longer available.', 'th-songbook' ); ?></p>
                         <?php endif; ?>
                     </div>
                     </div>
@@ -639,6 +708,109 @@ class TH_Songbook_Post_Types {
         }
 
         return $choices;
+    }
+
+    /**
+     * Retrieve formatted last used date for a song.
+     *
+     * @param int $song_id Song ID.
+     * @return string Formatted date or empty string.
+     */
+    private function get_song_last_used_display( $song_id ) {
+        $map = $this->get_song_last_used_map();
+
+        if ( empty( $map[ $song_id ] ) ) {
+            return '';
+        }
+
+        $date_value = $map[ $song_id ];
+        $timezone   = wp_timezone();
+        $date_obj   = date_create_immutable_from_format( 'Y-m-d', $date_value, $timezone );
+
+        if ( $date_obj instanceof \DateTimeImmutable ) {
+            return wp_date( get_option( 'date_format' ), $date_obj->getTimestamp(), $timezone );
+        }
+
+        $timestamp = strtotime( $date_value );
+        if ( false !== $timestamp ) {
+            return wp_date( get_option( 'date_format' ), $timestamp, $timezone );
+        }
+
+        return '';
+    }
+
+    /**
+     * Build or return cached map of song IDs to latest gig dates.
+     *
+     * @return array<int|string, string>
+     */
+    private function get_song_last_used_map() {
+        if ( null !== $this->song_last_used_map ) {
+            return $this->song_last_used_map;
+        }
+
+        $map  = array();
+        $gigs = get_posts(
+            array(
+                'post_type'      => 'th_gig',
+                'post_status'    => array( 'publish', 'future', 'private', 'draft', 'pending' ),
+                'posts_per_page' => -1,
+                'orderby'        => 'meta_value',
+                'order'          => 'DESC',
+                'meta_key'       => 'th_gig_date',
+                'meta_type'      => 'DATE',
+                'fields'         => 'ids',
+            )
+        );
+
+        foreach ( $gigs as $gig_id ) {
+            $date_value = get_post_meta( $gig_id, 'th_gig_date', true );
+            if ( empty( $date_value ) ) {
+                continue;
+            }
+
+            $song_ids = array();
+
+            $set_lists = $this->get_gig_setlists( $gig_id );
+            if ( is_array( $set_lists ) ) {
+                foreach ( $set_lists as $ids ) {
+                    foreach ( (array) $ids as $id ) {
+                        $id = (int) $id;
+                        if ( $id > 0 ) {
+                            $song_ids[] = $id;
+                        }
+                    }
+                }
+            }
+
+            $encores = $this->get_gig_encores( $gig_id );
+            if ( is_array( $encores ) ) {
+                foreach ( $encores as $encore_id ) {
+                    $encore_id = (int) $encore_id;
+                    if ( $encore_id > 0 ) {
+                        $song_ids[] = $encore_id;
+                    }
+                }
+            }
+
+            if ( empty( $song_ids ) ) {
+                continue;
+            }
+
+            $song_ids = array_unique( $song_ids );
+
+            foreach ( $song_ids as $song_id ) {
+                if ( isset( $map[ $song_id ] ) ) {
+                    continue;
+                }
+
+                $map[ $song_id ] = $date_value;
+            }
+        }
+
+        $this->song_last_used_map = $map;
+
+        return $this->song_last_used_map;
     }
 
     /**

@@ -499,14 +499,14 @@
                             }
                             html += '<button type="button" class="' + linkClass + '" data-songbook-song-link="' + pointer + '">';
                             if ( isEncore ) {
-                                html += '<span class="th-songbook-detail__set-song-flag">' + escapeHtml( strings.encoreLabel || 'Encore' ) + '</span>';
+                                html += '<span class="th-songbook-detail__set-song-flag">' + escapeHtml( strings.encoreLabel || 'EKSTRA' ) + '</span>';
                             }
                             html += '<span class="th-songbook-detail__set-song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</span>';
                             html += '<span class="th-songbook-detail__set-song-duration">' + escapeHtml( durationLabel ) + '</span>';
                             html += '</button>';
                         } else {
                             if ( isEncore ) {
-                                html += '<span class="th-songbook-detail__set-song-flag">' + escapeHtml( strings.encoreLabel || 'Encore' ) + '</span>';
+                                html += '<span class="th-songbook-detail__set-song-flag">' + escapeHtml( strings.encoreLabel || 'EKSTRA' ) + '</span>';
                             }
                             html += '<span class="th-songbook-detail__set-song-title">' + escapeHtml( song.title || strings.missingSong || '' ) + '</span>';
                             html += '<span class="th-songbook-detail__set-song-duration">' + escapeHtml( durationLabel ) + '</span>';
@@ -551,7 +551,7 @@
             html += '<span class="th-songbook-detail__song-key" aria-label="' + escapeHtml( ( strings.keyLabel || 'Key' ) + ': ' + song.key ) + '">' + escapeHtml( song.key ) + '</span>';
         }
         if ( isEncoreSong ) {
-            html += '<span class="th-songbook-detail__song-badge">' + escapeHtml( strings.encoreLabel || 'Encore' ) + '</span>';
+            html += '<span class="th-songbook-detail__song-badge">' + escapeHtml( strings.encoreLabel || 'EKSTRA' ) + '</span>';
         }
         html += '</div>';
         html += '</header>';
