@@ -7,3 +7,6 @@ th_gig_venue
 th_gig_address
 th_gig_subject
 post_title
+
+Sætlængde i Gigs, så en tæller kan køre - Lad Total time være grøn hvis kortere end sætlængde og rød hvis længere.
+Tæller i footer, triggered af første sang. Vi sætlængde fra Gigs
